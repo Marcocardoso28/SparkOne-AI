@@ -1,15 +1,42 @@
 # SparkOne
 
-Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este repositório contém o MVP em FastAPI com orquestração via Agno (a ser integrado), suporte a múltiplos provedores de modelo (OpenAI + fallback local) e infraestrutura local com Docker Compose.
+Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este repositório contém o MVP em FastAPI com orquestração via Agno (a ser integrado), suporte a múltiplos provedores de modelo (OpenAI + fallback local) e infraestrutura local com Docker Compose ou SQLite.
 
 > Para uma visão resumida em inglês, consulte `README_EN.md`.
 
 ## Pré-requisitos
 - Python 3.11+
-- Docker + Docker Compose
+- Docker + Docker Compose (opcional)
 - Make (opcional)
 
-## Configuração Rápida (stack Postgres)
+## Configuração Rápida (SQLite - Desenvolvimento Local)
+1. Clone o repositório e navegue até a pasta:
+   ```bash
+   git clone <repo-url>
+   cd SparkOne
+   ```
+2. Crie um ambiente virtual e instale as dependências:
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate  # Windows
+   # ou source venv/bin/activate  # Linux/Mac
+   pip install -r requirements.txt
+   ```
+3. Configure as variáveis de ambiente (já configurado para SQLite):
+   ```bash
+   cp .env.example .env
+   ```
+4. Crie as tabelas do banco SQLite:
+   ```bash
+   python create_sqlite_tables.py
+   ```
+5. Inicie o servidor:
+   ```bash
+   uvicorn src.app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+6. Acesse a documentação interativa em `http://localhost:8000/docs`.
+
+## Configuração com Docker (stack Postgres)
 1. Copie e ajuste credenciais no `.env` (já configurado para o Compose usar Postgres/Redis).
 2. Suba os serviços com Make (ou docker compose direto):
    ```bash
@@ -20,28 +47,17 @@ Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este reposit�
    make migrate
    ```
 4. Acesse a documentação interativa em `http://localhost:8000/docs`.
-5. Interface web (HTTP Basic) em `http://localhost:8000/web`.
-6. Para enviar payload bruto use `POST /channels/{nome}` (ex.: `/channels/whatsapp`).
-7. Configure o webhook Evolution para `POST /webhooks/whatsapp`.
-8. Briefs disponíveis em `GET /brief/structured` ou `GET /brief/text`.
-9. Tarefas/eventos: `GET /tasks`, `PATCH /tasks/{id}`, `GET /events`.
-10. Métricas Prometheus em `GET /metrics`; health em `/health`.
 
-### Executar sem Docker (opcional)
-1. Suba Postgres/Redis (por exemplo via Docker):
-   ```bash
-   docker compose up db cache
-   ```
-2. Instale dependências locais:
-   ```bash
-   pip install -e .[dev]
-   ```
-3. Ajuste `DATABASE_URL`/`VECTOR_STORE_URL` para `postgresql+asyncpg://sparkone:sparkone@localhost:5433/sparkone`.
-4. Rode migrações e o servidor:
-   ```bash
-   alembic upgrade head
-   uvicorn src.app.main:app --reload --port 8000
-   ```
+## Endpoints Principais
+- **Documentação**: `http://localhost:8000/docs` - Interface Swagger da API
+- **Health Check**: `GET /health` - Status da aplicação
+- **Tarefas**: `GET /tasks` - Lista de tarefas
+- **Métricas**: `GET /metrics` - Métricas Prometheus
+- **Interface Web**: `http://localhost:8000/web` - Interface web (HTTP Basic)
+- **Webhooks**: `POST /webhooks/whatsapp` - Webhook Evolution API
+- **Canais**: `POST /channels/{nome}` - Envio de mensagens por canal
+- **Briefs**: `GET /brief/structured` ou `GET /brief/text` - Resumos estruturados
+- **Eventos**: `GET /events` - Lista de eventos do sistema
 
 ## Estrutura de Pastas
 - `src/app/main.py`: inicialização FastAPI e registro de rotas.

@@ -114,15 +114,15 @@ def create_sqlite_tables():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            task_id TEXT NOT NULL UNIQUE,
-            status TEXT NOT NULL DEFAULT 'pending',
-            task_type TEXT NOT NULL,
-            payload TEXT NOT NULL DEFAULT '{}',
-            result TEXT,
-            error_message TEXT,
+            title TEXT NOT NULL,
+            description TEXT,
+            due_at DATETIME,
+            status TEXT NOT NULL DEFAULT 'todo',
+            external_id TEXT,
+            channel TEXT NOT NULL,
+            sender TEXT NOT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     """)
     
