@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SparkOne · Entrada Multimodal</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <header class="panel__header">
+          <div>
+            <p class="panel__eyebrow">SparkOne · Assistente pessoal</p>
+            <h1>Envie texto, voz ou imagens</h1>
+            <p class="panel__description">
+              A entrada é roteada para o pipeline padrão do SparkOne. As mensagens herdam a persona oficial e
+              alimentam a memória recente.
+            </p>
+          </div>
+        </header>
+
+        {% if sent %}
+        <div class="toast toast--success" role="status">Mensagem entregue ao SparkOne.</div>
+        {% elif error %}
+        <div class="toast toast--error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form id="message-form" class="composer" method="post" action="/web" enctype="multipart/form-data">
+          <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token }}" />
+          <label class="composer__label" for="message-input">Mensagem</label>
+          <textarea
+            id="message-input"
+            name="message"
+            rows="6"
+            placeholder="Conte ao SparkOne o que precisa..."
+          >{{ message or "" }}</textarea>
+
+          <div class="composer__actions">
+            <button type="button" id="record-button" class="button button--secondary">🎙️ Gravar áudio</button>
+            <button type="button" id="speech-button" class="button button--ghost">🗣️ Ditado</button>
+            <label class="button button--ghost">
+              📷 Adicionar imagem
+              <input type="file" id="image-input" name="image" accept="image/*" />
+            </label>
+          </div>
+
+          <div class="composer__previews" id="previews">
+            <figure class="preview preview--image" id="image-preview" hidden>
+              <img alt="Pré-visualização da imagem" />
+              <button type="button" class="preview__remove" data-target="image">Remover</button>
+            </figure>
+            <div class="preview preview--audio" id="audio-preview" hidden>
+              <audio controls></audio>
+              <button type="button" class="preview__remove" data-target="audio">Remover</button>
+            </div>
+          </div>
+
+          <input type="file" name="audio" id="audio-file" accept="audio/*" hidden />
+
+          <button type="submit" class="button button--primary" id="submit-button">Enviar para SparkOne</button>
+        </form>
+
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </section>
+
+      <aside class="sidebar">
+        <h2>Dicas rápidas</h2>
+        <ul>
+          <li>Grave notas curtas; o áudio é anexado ao registro da conversa.</li>
+          <li>Imagens são armazenadas localmente e referenciadas na ingestão.</li>
+          <li>Use o ditado para popular o texto automaticamente quando suportado pelo navegador.</li>
+        </ul>
+        <div class="sidebar__meta">
+          <span class="tag">Fuso horário: {{ timezone }}</span>
+          <span class="tag">Limite upload: {{ (max_upload // 1024 // 1024) }}MB</span>
+          <span class="tag">Canal: web</span>
+        </div>
+      </aside>
+    </main>
+  </body>
+</html>

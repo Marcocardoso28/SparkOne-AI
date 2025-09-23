@@ -1,0 +1,29 @@
+name: Nightly Backup Verification
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Run backup on staging host
+        if: ${{ secrets.SSH_HOST != '' }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'cd ${{ secrets.STAGING_PATH }} && ./ops/backup.sh backups'
+
+      - name: Download latest backup (placeholder)
+        run: echo "Configure artifact download via scp if necessário."
+*** End Patch
+PATCH

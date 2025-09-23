@@ -1,0 +1,884 @@
+openapi: 3.0.3
+info:
+  title: SparkOne API
+  description: |
+    API do SparkOne - Sistema de Assistente Pessoal Inteligente
+    
+    O SparkOne é uma plataforma de IA conversacional que processa mensagens de múltiplos canais
+    (WhatsApp, Web, Google Sheets) e as transforma em ações estruturadas como tarefas, eventos
+    e recomendações personalizadas.
+    
+    ## Arquitetura
+    
+    O sistema segue uma arquitetura baseada em eventos com os seguintes componentes principais:
+    
+    - **Ingestão**: Normalização de mensagens de diferentes canais
+    - **Orquestração**: Classificação e roteamento inteligente via IA
+    - **Serviços**: Processamento especializado (tarefas, calendário, coach)
+    - **Integrações**: Conectores para serviços externos (Notion, Google, WhatsApp)
+    
+    ## Autenticação
+    
+    - Interface Web: HTTP Basic Authentication
+    - Webhooks: Validação por token (quando configurado)
+    - Métricas: Endpoint público para Prometheus
+    
+    ## Rate Limiting
+    
+    - Desenvolvimento: 120 requests/minuto
+    - Produção: 60 requests/minuto
+    
+  version: 0.1.0
+  contact:
+    name: SparkOne Team
+    email: contato@sparkone.ai
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Ambiente de desenvolvimento
+  - url: https://api.sparkone.ai
+    description: Ambiente de produção
+
+paths:
+  # Health Checks
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Verificação de saúde geral
+      description: Retorna o status geral de saúde da aplicação
+      responses:
+        '200':
+          description: Sistema saudável
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: "healthy"
+                timestamp: "2024-01-15T10:30:00Z"
+                version: "0.1.0"
+        '503':
+          description: Sistema com problemas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: "unhealthy"
+                timestamp: "2024-01-15T10:30:00Z"
+                error: "Database connection failed"
+
+  /health/database:
+    get:
+      tags:
+        - Health
+      summary: Verificação de saúde do banco de dados
+      description: Testa conectividade e responsividade do PostgreSQL
+      responses:
+        '200':
+          description: Banco de dados saudável
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseHealth'
+              example:
+                status: "healthy"
+                database: "postgresql"
+                latency_ms: 12
+                timestamp: "2024-01-15T10:30:00Z"
+
+  /health/redis:
+    get:
+      tags:
+        - Health
+      summary: Verificação de saúde do Redis
+      description: Testa conectividade com o cache Redis
+      responses:
+        '200':
+          description: Redis saudável
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedisHealth'
+              example:
+                status: "healthy"
+                redis: "connected"
+                memory_usage: "2.1MB"
+                timestamp: "2024-01-15T10:30:00Z"
+
+  # Ingestão de Mensagens
+  /ingest:
+    post:
+      tags:
+        - Ingestão
+      summary: Ingestão direta de mensagem normalizada
+      description: |
+        Recebe uma mensagem já normalizada e a processa através da pipeline completa:
+        1. Validação do payload
+        2. Sanitização do conteúdo
+        3. Roteamento para o orquestrador
+        4. Persistência no banco de dados
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelMessage'
+            examples:
+              whatsapp_task:
+                summary: Mensagem WhatsApp para criar tarefa
+                value:
+                  channel: "whatsapp"
+                  sender: "5511999999999"
+                  content: "Preciso revisar o relatório de vendas até sexta-feira"
+                  timestamp: "2024-01-15T10:30:00Z"
+                  metadata:
+                    message_id: "msg_12345"
+                    chat_id: "5511999999999@s.whatsapp.net"
+              web_event:
+                summary: Mensagem Web para criar evento
+                value:
+                  channel: "web"
+                  sender: "usuario@empresa.com"
+                  content: "Agendar reunião com equipe na quinta às 14h"
+                  timestamp: "2024-01-15T10:30:00Z"
+                  metadata:
+                    user_agent: "Mozilla/5.0"
+                    ip_address: "192.168.1.100"
+      responses:
+        '202':
+          description: Mensagem aceita para processamento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestResponse'
+              example:
+                status: "accepted"
+                channel: "whatsapp"
+                message_id: "msg_12345"
+        '400':
+          description: Payload inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Conteúdo da mensagem excede o limite de 10000 caracteres"
+
+  # Canais Específicos
+  /channels/{channel_name}:
+    post:
+      tags:
+        - Canais
+      summary: Ingestão por canal específico
+      description: |
+        Recebe payload bruto de um canal específico e o normaliza antes do processamento.
+        Suporta diferentes formatos de payload dependendo do canal.
+      parameters:
+        - name: channel_name
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [whatsapp, web, sheets]
+          description: Nome do canal de origem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Payload específico do canal
+            examples:
+              whatsapp_webhook:
+                summary: Webhook do WhatsApp via Evolution API
+                value:
+                  data:
+                    key:
+                      remoteJid: "5511999999999@s.whatsapp.net"
+                      fromMe: false
+                      id: "msg_12345"
+                    message:
+                      conversation: "Criar tarefa para revisar contratos"
+                    messageTimestamp: 1705312200
+              sheets_sync:
+                summary: Sincronização Google Sheets
+                value:
+                  action: "sync_tasks"
+                  spreadsheet_id: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                  range: "Tasks!A1:E100"
+                  timestamp: "2024-01-15T10:30:00Z"
+      responses:
+        '202':
+          description: Payload aceito e normalizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelResponse'
+              example:
+                status: "accepted"
+                channel: "whatsapp"
+        '400':
+          description: Canal não registrado ou payload inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Webhooks
+  /webhooks/whatsapp:
+    post:
+      tags:
+        - Webhooks
+      summary: Webhook do WhatsApp
+      description: |
+        Endpoint específico para receber webhooks da Evolution API.
+        Processa mensagens recebidas via WhatsApp automaticamente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppWebhook'
+            example:
+              data:
+                key:
+                  remoteJid: "5511999999999@s.whatsapp.net"
+                  fromMe: false
+                  id: "msg_12345"
+                message:
+                  conversation: "Lembrar de comprar ingredientes para o jantar"
+                messageTimestamp: 1705312200
+      responses:
+        '202':
+          description: Webhook processado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+              example:
+                status: "accepted"
+
+  # Tarefas
+  /tasks:
+    get:
+      tags:
+        - Tarefas
+      summary: Listar tarefas
+      description: Retorna lista paginada de tarefas com filtros opcionais
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+          description: Filtrar por status da tarefa
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Número máximo de tarefas a retornar
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Número de tarefas a pular
+      responses:
+        '200':
+          description: Lista de tarefas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskResponse'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                tasks:
+                  - id: 1
+                    title: "Revisar relatório mensal"
+                    description: "Analisar métricas de performance"
+                    status: "pending"
+                    priority: "medium"
+                    created_at: "2024-01-15T10:30:00Z"
+                    due_date: "2024-01-19T17:00:00Z"
+                  - id: 2
+                    title: "Preparar apresentação"
+                    description: "Slides para reunião de diretoria"
+                    status: "in_progress"
+                    priority: "high"
+                    created_at: "2024-01-14T09:15:00Z"
+                    due_date: "2024-01-16T14:00:00Z"
+                total: 15
+                limit: 20
+                offset: 0
+
+  /tasks/{task_id}/status:
+    patch:
+      tags:
+        - Tarefas
+      summary: Atualizar status da tarefa
+      description: Modifica o status de uma tarefa específica
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da tarefa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/TaskStatus'
+              required:
+                - status
+            example:
+              status: "completed"
+      responses:
+        '200':
+          description: Status atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          description: Tarefa não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Eventos
+  /events:
+    get:
+      tags:
+        - Eventos
+      summary: Listar eventos
+      description: Retorna lista de eventos do calendário com filtros
+      parameters:
+        - name: upcoming_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Retorna apenas eventos futuros
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Número máximo de eventos
+      responses:
+        '200':
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponse'
+              example:
+                - id: 1
+                  title: "Reunião de planejamento"
+                  status: "scheduled"
+                  start_at: "2024-01-18T14:00:00Z"
+                  end_at: "2024-01-18T15:00:00Z"
+                  location: "Sala de conferências"
+                - id: 2
+                  title: "Apresentação para cliente"
+                  status: "confirmed"
+                  start_at: "2024-01-19T10:00:00Z"
+                  end_at: "2024-01-19T11:30:00Z"
+                  location: "Escritório do cliente"
+
+  # Briefs
+  /brief/structured:
+    get:
+      tags:
+        - Briefs
+      summary: Brief estruturado
+      description: |
+        Retorna um resumo estruturado das atividades recentes,
+        tarefas pendentes e próximos eventos.
+      responses:
+        '200':
+          description: Brief estruturado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StructuredBrief'
+              example:
+                summary:
+                  pending_tasks: 5
+                  upcoming_events: 3
+                  recent_messages: 12
+                tasks:
+                  - title: "Revisar relatório"
+                    priority: "high"
+                    due_date: "2024-01-19T17:00:00Z"
+                events:
+                  - title: "Reunião de equipe"
+                    start_at: "2024-01-16T09:00:00Z"
+                    location: "Sala 201"
+                insights:
+                  - "Você tem 3 tarefas com prazo para esta semana"
+                  - "Próxima reunião em 2 dias"
+
+  /brief/text:
+    get:
+      tags:
+        - Briefs
+      summary: Brief textual
+      description: Retorna um resumo em formato de texto natural
+      responses:
+        '200':
+          description: Brief em texto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  brief:
+                    type: string
+              example:
+                brief: |
+                  Bom dia! Aqui está seu resumo de hoje:
+                  
+                  📋 Tarefas Pendentes (5):
+                  • Revisar relatório mensal (prazo: sexta-feira)
+                  • Preparar apresentação (prazo: amanhã)
+                  
+                  📅 Próximos Eventos (3):
+                  • Reunião de equipe - Amanhã às 09:00
+                  • Apresentação para cliente - Quinta às 10:00
+                  
+                  💡 Insights:
+                  • Você tem 3 tarefas com prazo para esta semana
+                  • Considere priorizar a apresentação que vence amanhã
+
+  # Alertas
+  /alerts/alertmanager:
+    post:
+      tags:
+        - Alertas
+      summary: Webhook do Alertmanager
+      description: |
+        Recebe alertas do Prometheus Alertmanager e os encaminha
+        via WhatsApp para os números configurados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertPayload'
+            example:
+              alerts:
+                - status: "firing"
+                  labels:
+                    alertname: "NotionSyncFailures"
+                    severity: "warning"
+                  annotations:
+                    summary: "Falha em sincronizações com Notion"
+                    description: "Detectado ao menos 1 erro no Notion nos últimos 15 minutos"
+                  startsAt: "2024-01-15T10:30:00Z"
+      responses:
+        '202':
+          description: Alerta processado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+              example:
+                status: "accepted"
+
+  # Métricas
+  /metrics:
+    get:
+      tags:
+        - Observabilidade
+      summary: Métricas Prometheus
+      description: |
+        Endpoint para coleta de métricas pelo Prometheus.
+        Expõe métricas de performance, uso e saúde do sistema.
+      responses:
+        '200':
+          description: Métricas em formato Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP sparkone_http_requests_total Total HTTP requests
+                # TYPE sparkone_http_requests_total counter
+                sparkone_http_requests_total{method="GET",path="/health",status="200"} 42
+                sparkone_http_requests_total{method="POST",path="/ingest",status="202"} 15
+                
+                # HELP sparkone_http_request_latency_seconds Latency of HTTP requests
+                # TYPE sparkone_http_request_latency_seconds histogram
+                sparkone_http_request_latency_seconds_bucket{le="0.05"} 30
+                sparkone_http_request_latency_seconds_bucket{le="0.1"} 45
+                sparkone_http_request_latency_seconds_bucket{le="+Inf"} 57
+                sparkone_http_request_latency_seconds_sum 2.1
+                sparkone_http_request_latency_seconds_count 57
+
+components:
+  schemas:
+    # Schemas de Health
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        error:
+          type: string
+      required:
+        - status
+        - timestamp
+
+    DatabaseHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        database:
+          type: string
+        latency_ms:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - database
+        - timestamp
+
+    RedisHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        redis:
+          type: string
+        memory_usage:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - redis
+        - timestamp
+
+    # Schemas de Mensagens
+    ChannelMessage:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/Channel'
+        sender:
+          type: string
+          description: Identificador do remetente
+        content:
+          type: string
+          maxLength: 10000
+          description: Conteúdo da mensagem
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp da mensagem
+        metadata:
+          type: object
+          description: Metadados específicos do canal
+          additionalProperties: true
+      required:
+        - channel
+        - sender
+        - content
+        - timestamp
+
+    Channel:
+      type: string
+      enum: [whatsapp, web, sheets]
+      description: Canal de origem da mensagem
+
+    # Schemas de Tarefas
+    TaskResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        due_date:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - status
+        - created_at
+
+    TaskStatus:
+      type: string
+      enum: [pending, in_progress, completed, cancelled]
+      description: Status da tarefa
+
+    TaskPriority:
+      type: string
+      enum: [low, medium, high, urgent]
+      description: Prioridade da tarefa
+
+    # Schemas de Eventos
+    EventResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+        location:
+          type: string
+        description:
+          type: string
+      required:
+        - id
+        - title
+        - status
+        - start_at
+
+    EventStatus:
+      type: string
+      enum: [scheduled, confirmed, cancelled, completed]
+      description: Status do evento
+
+    # Schemas de Briefs
+    StructuredBrief:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            pending_tasks:
+              type: integer
+            upcoming_events:
+              type: integer
+            recent_messages:
+              type: integer
+        tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              priority:
+                $ref: '#/components/schemas/TaskPriority'
+              due_date:
+                type: string
+                format: date-time
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              start_at:
+                type: string
+                format: date-time
+              location:
+                type: string
+        insights:
+          type: array
+          items:
+            type: string
+
+    # Schemas de Webhooks
+    WhatsAppWebhook:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            key:
+              type: object
+              properties:
+                remoteJid:
+                  type: string
+                fromMe:
+                  type: boolean
+                id:
+                  type: string
+            message:
+              type: object
+              properties:
+                conversation:
+                  type: string
+            messageTimestamp:
+              type: integer
+      required:
+        - data
+
+    # Schemas de Alertas
+    AlertPayload:
+      type: object
+      properties:
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [firing, resolved]
+              labels:
+                type: object
+                additionalProperties:
+                  type: string
+              annotations:
+                type: object
+                additionalProperties:
+                  type: string
+              startsAt:
+                type: string
+                format: date-time
+              endsAt:
+                type: string
+                format: date-time
+      required:
+        - alerts
+
+    # Schemas de Resposta
+    IngestResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        channel:
+          $ref: '#/components/schemas/Channel'
+        message_id:
+          type: string
+      required:
+        - status
+        - channel
+
+    ChannelResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        channel:
+          $ref: '#/components/schemas/Channel'
+      required:
+        - status
+        - channel
+
+    WebhookResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        error_code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - detail
+
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic Authentication para interface web
+
+security:
+  - BasicAuth: []
+
+tags:
+  - name: Health
+    description: Endpoints de verificação de saúde
+  - name: Ingestão
+    description: Endpoints para ingestão de mensagens
+  - name: Canais
+    description: Endpoints específicos por canal
+  - name: Webhooks
+    description: Webhooks de serviços externos
+  - name: Tarefas
+    description: Gerenciamento de tarefas
+  - name: Eventos
+    description: Gerenciamento de eventos do calendário
+  - name: Briefs
+    description: Resumos e insights
+  - name: Alertas
+    description: Sistema de alertas
+  - name: Observabilidade
+    description: Métricas e monitoramento

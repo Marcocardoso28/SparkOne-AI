@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+.tox/
+.venv/
+venv/
+ENV/
+env/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+sparkone.db
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# Uploads and temporary files
+uploads/
+temp/
+tmp/
+*.tmp
+*.log
+*.pid
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Security and keys
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore

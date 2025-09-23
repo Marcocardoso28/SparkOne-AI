@@ -1,0 +1,168 @@
+groups:
+  - name: sparkone-alerts
+    rules:
+      # Alertas de Sincronização
+      - alert: NotionSyncFailures
+        expr: increase(sparkone_notion_sync_total{status="failure"}[15m]) >= 1
+        for: 0m
+        labels:
+          severity: warning
+          service: notion
+        annotations:
+          summary: "Falha em sincronizações com Notion"
+          description: "Detectado ao menos 1 erro no Notion nos últimos 15 minutos"
+
+      - alert: SheetsSyncFailures
+        expr: increase(sparkone_sheets_sync_total{status="failure"}[15m]) >= 1
+        for: 0m
+        labels:
+          severity: critical
+          service: sheets
+        annotations:
+          summary: "Falha em sincronizações com Google Sheets"
+          description: "Detectado ao menos 1 erro no Google Sheets nos últimos 15 minutos"
+
+      # Alertas de Performance
+      - alert: HighRequestRate
+        expr: rate(sparkone_http_requests_total[1m]) > 100
+        for: 1m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Taxa de requisições elevada"
+          description: "API recebendo mais de 100 requests/min nos últimos 1 minuto"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(sparkone_http_request_latency_seconds_bucket[5m])) > 2.0
+        for: 2m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Latência elevada na API"
+          description: "95% das requisições estão levando mais de 2 segundos para responder"
+
+      - alert: DatabaseSlowQueries
+        expr: avg(sparkone_database_query_duration_seconds) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Queries lentas no banco de dados"
+          description: "Tempo médio de query no banco está acima de 500ms por 3 minutos"
+
+      # Alertas de Recursos
+      - alert: HighCPUUsage
+        expr: 100 * (1 - avg(rate(container_cpu_usage_seconds_total[5m]))) > 85
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Uso elevado de CPU"
+          description: "CPU acima de 85% por mais de 5 minutos"
+
+      - alert: HighMemoryUsage
+        expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 85
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Uso elevado de memória"
+          description: "Memória acima de 85% por mais de 5 minutos"
+
+      - alert: DatabaseConnectionsHigh
+        expr: sparkone_active_connections > 50
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Muitas conexões ativas no banco"
+          description: "Mais de 50 conexões ativas no PostgreSQL"
+
+      # Alertas de Saúde do Sistema
+      - alert: ServiceDown
+        expr: up{job="sparkone"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sparkone
+        annotations:
+          summary: "SparkOne está fora do ar"
+          description: "Serviço SparkOne não está respondendo há mais de 1 minuto"
+
+      - alert: DatabaseDown
+        expr: sparkone_database_health == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Banco de dados indisponível"
+          description: "PostgreSQL não está acessível"
+
+      - alert: RedisDown
+        expr: sparkone_redis_health == 0
+        for: 30s
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis indisponível"
+          description: "Cache Redis não está acessível"
+
+      # Alertas de E2E e Qualidade
+      - alert: E2ETestFailures
+        expr: increase(sparkone_e2e_test_failures_total[30m]) >= 3
+        for: 0m
+        labels:
+          severity: warning
+          service: testing
+        annotations:
+          summary: "Falhas em testes E2E"
+          description: "3 ou mais testes E2E falharam nos últimos 30 minutos"
+
+      - alert: E2ETestSlowPerformance
+        expr: rate(sparkone_e2e_test_duration_seconds_sum[5m]) / rate(sparkone_e2e_test_duration_seconds_count[5m]) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: testing
+        annotations:
+          summary: "Testes E2E lentos"
+          description: "Testes E2E levando mais de 30 segundos em média"
+
+      # Alertas de Negócio
+      - alert: TaskBacklogHigh
+        expr: sparkone_pending_tasks_total > 5000
+        for: 10m
+        labels:
+          severity: warning
+          service: business
+        annotations:
+          summary: "Backlog de tarefas elevado"
+          description: "Mais de 5000 tarefas pendentes no sistema"
+
+      - alert: MessageProcessingDelay
+        expr: rate(sparkone_message_processing_duration_seconds_sum[5m]) / rate(sparkone_message_processing_duration_seconds_count[5m]) > 10
+        for: 3m
+        labels:
+          severity: warning
+          service: processing
+        annotations:
+          summary: "Processamento de mensagens lento"
+          description: "Mensagens levando mais de 10 segundos para processar"
+
+      - alert: WhatsAppNotificationFailures
+        expr: increase(sparkone_whatsapp_notifications_total{status="failure"}[1h]) >= 5
+        for: 0m
+        labels:
+          severity: warning
+          service: whatsapp
+        annotations:
+          summary: "Falhas em notificações WhatsApp"
+          description: "5 ou mais falhas de notificação WhatsApp na última hora"

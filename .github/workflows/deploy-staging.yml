@@ -1,0 +1,74 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: sparkone
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository }}:latest
+          file: Dockerfile
+
+      - name: Deploy to staging
+        if: ${{ secrets.SSH_HOST != '' }}
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.STAGING_PATH }}
+            export IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+            docker compose pull api || true
+            docker compose up -d --force-recreate --build
+            sleep 5
+            curl -sf http://localhost:8000/health/ || exit 1
+            curl -sf http://localhost:8000/metrics || exit 1
+            curl -sf http://localhost:8000/brief/text || exit 1
+            curl -sf http://localhost:8000/tasks || exit 1
+
+  verify:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: External smoke test
+        if: ${{ secrets.STAGING_URL != '' }}
+        run: |
+          curl -sf ${{ secrets.STAGING_URL }}/health/ || exit 1
+          curl -sf ${{ secrets.STAGING_URL }}/metrics | head -n 20 || exit 1

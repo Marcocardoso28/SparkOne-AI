@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  api:
+    image: ghcr.io/macspark/sparkone:latest
+    env_file: ../.env
+    environment:
+      - ENVIRONMENT=staging
+      - DEBUG=false
+    ports:
+      - "8080:8000"
+    depends_on:
+      - db
+      - cache
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=sparkone
+      - POSTGRES_USER=sparkone
+      - POSTGRES_PASSWORD=sparkone
+    volumes:
+      - staging-pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  pgbackups:
+    image: prodrigestivill/postgres-backup-local
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=sparkone
+      - POSTGRES_USER=sparkone
+      - POSTGRES_PASSWORD=sparkone
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+    volumes:
+      - staging-backups:/backups
+    depends_on:
+      - db
+
+volumes:
+  staging-pgdata:
+  staging-backups:

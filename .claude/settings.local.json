@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__sequential-thinking-tools__sequentialthinking_tools",
+      "mcp__context-7__resolve-library-id",
+      "mcp__context-7__get-library-docs",
+      "mcp__exa-search__web_search_exa",
+      "Bash(find:*)",
+      "Bash(pytest:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
