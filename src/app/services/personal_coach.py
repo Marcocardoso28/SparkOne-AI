@@ -16,15 +16,36 @@ class PersonalCoachService:
         self._chat = chat_provider
 
     async def handle(self, payload: ChannelMessage) -> dict[str, Any]:
-        """Return a placeholder response until the LLM prompt is finalized."""
+        """Provide coaching and personal development guidance."""
 
-        # TODO: craft full prompt and parse structured response.
-        message = (
-            f"{DEFAULT_PERSONA_PROMPT}\n\n"
-            f"Texto enviado: {payload.content}\n"
-            "Resposta padrão: recurso de coaching em desenvolvimento."
+        coaching_prompt = (
+            "Você é um coach pessoal especializado em desenvolvimento, produtividade e motivação. "
+            "O usuário está pedindo conselhos ou orientação. Forneça uma resposta útil, motivadora e prática. "
+            "Seja empático, positivo e ofereça dicas acionáveis.\n\n"
+            f"Pergunta/pedido do usuário: {payload.content}\n\n"
+            "Forneça uma resposta de coaching útil e motivadora:"
         )
-        return {"status": "pending", "message": message}
+
+        try:
+            response = await self._chat.generate(
+                messages=[
+                    {"role": "system", "content": DEFAULT_PERSONA_PROMPT},
+                    {"role": "user", "content": coaching_prompt},
+                ],
+                temperature=0.7,
+                task_type="smart",  # Usar modelo inteligente para coaching
+            )
+            return {
+                "status": "responded",
+                "response": response,
+                "category": "coaching"
+            }
+        except Exception:
+            return {
+                "status": "error",
+                "response": "Desculpe, não consegui gerar uma resposta de coaching no momento. Tente novamente.",
+                "category": "coaching"
+            }
 
 
 __all__ = ["PersonalCoachService"]

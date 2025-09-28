@@ -102,6 +102,8 @@ class CalendarService:
             "event_id": record.id,
             "external_id": external_id,
             "start_at": start_at.isoformat(),
+            "response": f"Evento agendado com sucesso: '{payload.content[:100]}{'...' if len(payload.content) > 100 else ''}'. " +
+                       f"Data: {start_at.strftime('%d/%m/%Y às %H:%M')}",
         }
 
     def _parse_datetime(self, value: Any) -> datetime | None:

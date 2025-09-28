@@ -23,11 +23,13 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = None
     openai_base_url: AnyHttpUrl | None = None
-    openai_model: str = "gpt-4.1"
+    openai_model: str = "gpt-4o-mini"
 
     local_llm_url: AnyHttpUrl | None = None
     local_llm_api_key: str | None = None
     local_llm_model: str = "llama-3.1-8b-instruct"
+    local_llm_fast_model: str = "gemma3:4b"  # Modelo rápido para tarefas simples
+    local_llm_smart_model: str = "llama3.1:8b"  # Modelo inteligente para tarefas complexas
     llm_request_timeout: float = 15.0
     llm_max_retries: int = 2
 

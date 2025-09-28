@@ -27,6 +27,7 @@ class AgnoBridge:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.0,
+                task_type="fast",  # Usa modelo rápido para classificação
             )
         except LLMGenerationError as exc:
             self._logger.warning("agno_classification_failed", error=str(exc))
@@ -48,6 +49,7 @@ class AgnoBridge:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
+                task_type="smart",  # Usa modelo inteligente para respostas
             )
         except LLMGenerationError as exc:
             self._logger.warning("agno_response_failed", error=str(exc), category=category.value)

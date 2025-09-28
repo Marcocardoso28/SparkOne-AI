@@ -26,7 +26,9 @@
       "Bash(pip-audit:*)",
       "Bash(pip show:*)",
       "WebSearch",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(del \"C:\\Users\\marco\\Macspark\\SparkOne\\test_message_flow.py\")"
     ],
     "deny": [],
     "ask": []

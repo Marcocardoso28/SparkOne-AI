@@ -62,10 +62,9 @@ class IngestionService:
             bound_logger.exception("ingestion_persist_failed", error=str(exc))
             raise
 
-        try:
-            await self._embedding_service.index_message(message)
-        except Exception as exc:  # pragma: no cover - embedding failure path
-            bound_logger.warning("ingestion_embedding_failed", error=str(exc))
+        # Fazer embeddings de forma assíncrona (não bloqueante)
+        import asyncio
+        asyncio.create_task(self._async_embedding(message, bound_logger))
 
         try:
             await self._memory_service.store_user_message(payload)
@@ -105,6 +104,13 @@ class IngestionService:
                 bound_logger.warning("ingestion_assistant_memory_failed", error=str(exc))
 
         return result if isinstance(result, dict) else None
+
+    async def _async_embedding(self, message, bound_logger) -> None:
+        """Processa embeddings de forma assíncrona para não bloquear resposta."""
+        try:
+            await self._embedding_service.index_message(message)
+        except Exception as exc:  # pragma: no cover - embedding failure path
+            bound_logger.warning("ingestion_embedding_failed", error=str(exc))
 
 
 __all__ = ["IngestionService"]

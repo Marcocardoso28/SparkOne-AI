@@ -10,6 +10,7 @@ import structlog
 from openai import AsyncOpenAI, OpenAIError
 
 from app.config import Settings
+from app.core.cache import get_response_cache
 
 logger = structlog.get_logger(__name__)
 
@@ -73,11 +74,13 @@ class OpenAICompatibleProvider:
 
 
 class ChatProviderRouter:
-    """Router that decides which provider should serve a request."""
+    """Router that intelligently selects the best model for each task."""
 
     def __init__(self, settings: Settings) -> None:
         self._primary: OpenAICompatibleProvider | None = None
         self._fallback: OpenAICompatibleProvider | None = None
+        self._fast_local: OpenAICompatibleProvider | None = None
+        self._smart_local: OpenAICompatibleProvider | None = None
 
         timeout = settings.llm_request_timeout
         retries = settings.llm_max_retries
@@ -96,9 +99,27 @@ class ChatProviderRouter:
                 api_key=settings.local_llm_api_key or "not-required",
                 base_url=str(settings.local_llm_url),
             )
+
+            # Modelo padrão (compatibilidade)
             self._fallback = OpenAICompatibleProvider(
                 client=client,
                 model=settings.local_llm_model,
+                timeout=timeout,
+                max_retries=retries,
+            )
+
+            # Modelo rápido para tarefas simples
+            self._fast_local = OpenAICompatibleProvider(
+                client=client,
+                model=settings.local_llm_fast_model,
+                timeout=timeout // 2,  # Timeout reduzido
+                max_retries=1,
+            )
+
+            # Modelo inteligente para tarefas complexas
+            self._smart_local = OpenAICompatibleProvider(
+                client=client,
+                model=settings.local_llm_smart_model,
                 timeout=timeout,
                 max_retries=retries,
             )
@@ -107,22 +128,67 @@ class ChatProviderRouter:
     def available(self) -> bool:
         return self._primary is not None or self._fallback is not None
 
-    async def generate(self, messages: Sequence[ChatMessage], **kwargs: Any) -> str:
-        """Try the primary provider and fallback to local if necessary."""
+    def _select_optimal_provider(self, task_type: str = "default") -> OpenAICompatibleProvider | None:
+        """Seleciona o melhor provedor baseado no tipo de tarefa."""
 
-        if self._primary is None and self._fallback is None:
+        # Tarefas rápidas: classificação, perguntas simples
+        if task_type == "fast" and self._fast_local:
+            return self._fast_local
+
+        # Tarefas inteligentes: coaching, respostas complexas
+        if task_type == "smart" and self._smart_local:
+            return self._smart_local
+
+        # Fallback padrão
+        if self._primary:
+            return self._primary
+
+        return self._fallback
+
+    async def generate(self, messages: Sequence[ChatMessage], **kwargs: Any) -> str:
+        """Generate response using the optimal provider for the task."""
+
+        # Verificar cache primeiro
+        cache = get_response_cache()
+        messages_list = list(messages)
+
+        cached_response = cache.get(messages_list, **kwargs)
+        if cached_response:
+            return cached_response
+
+        task_type = kwargs.pop("task_type", "default")
+        optimal_provider = self._select_optimal_provider(task_type)
+
+        if optimal_provider is None:
             raise RuntimeError("No chat providers configured. Check environment variables.")
 
-        if self._primary is not None:
-            try:
-                return await self._primary.generate(messages, **kwargs)
-            except LLMGenerationError as exc:
-                logger.warning("chat_provider_primary_failed", error=str(exc))
+        try:
+            response = await optimal_provider.generate(messages, **kwargs)
+            # Armazenar no cache
+            cache.set(messages_list, response, task_type=task_type, **kwargs)
+            return response
+        except LLMGenerationError as exc:
+            logger.warning("chat_provider_optimal_failed", task_type=task_type, error=str(exc))
 
-        if self._fallback is not None:
-            return await self._fallback.generate(messages, **kwargs)
+            # Fallback para outros provedores se o ótimo falhar
+            fallback_providers = [
+                self._primary,
+                self._smart_local,
+                self._fast_local,
+                self._fallback
+            ]
 
-        raise LLMGenerationError("Primary provider unavailable and no fallback configured")
+            for provider in fallback_providers:
+                if provider and provider != optimal_provider:
+                    try:
+                        response = await provider.generate(messages, **kwargs)
+                        # Armazenar resposta de fallback no cache
+                        cache.set(messages_list, response, task_type=task_type, **kwargs)
+                        return response
+                    except LLMGenerationError:
+                        continue
+
+            raise LLMGenerationError("All providers failed") from exc
 
 
 __all__ = ["ChatProviderRouter", "ChatMessage", "LLMGenerationError"]

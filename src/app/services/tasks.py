@@ -67,6 +67,8 @@ class TaskService:
             "task_id": record.id,
             "notion_id": notion_id,
             "due_at": due_at.isoformat() if due_at else None,
+            "response": f"Tarefa criada com sucesso: '{payload.content[:100]}{'...' if len(payload.content) > 100 else ''}'. " +
+                       (f"Prazo: {due_at.strftime('%d/%m/%Y às %H:%M')}" if due_at else "Sem prazo definido."),
         }
 
     def _parse_due_date(self, value: Any) -> datetime | None:  # pragma: no cover - simple helper
