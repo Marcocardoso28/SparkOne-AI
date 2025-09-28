@@ -17,7 +17,7 @@ logger = structlog.get_logger(__name__)
 class ClassificationService:
     """Heurística com fallback ao AgnoBridge."""
 
-    def __init__(self, agno: "AgnoBridge | None" = None) -> None:
+    def __init__(self, agno: AgnoBridge | None = None) -> None:
         self._agno = agno
 
     async def classify(self, payload: ChannelMessage) -> MessageType:

@@ -162,7 +162,7 @@ O endpoint `/web` disponibiliza uma interface minimalista e responsiva para envi
 - Use um **Webhook Trigger** no n8n filtrando o header `X-Event-Name` para acionar fluxos (ex.: criar ticket, disparar aviso).
 
 ## Staging & Backups
-- `ops/staging-compose.yml` descreve um ambiente staging com API, Postgres, Redis e backup diário automático.
+- `ops/staging-compose.yml` descreve um ambiente staging com API, Postgres, Redis, Traefik (TLS automático), Prometheus, Alertmanager, cAdvisor e backup diário.
 - Scripts utilitários:
   - `ops/backup.sh [destino]` → gera dump `pg_dump` via container `db`.
   - `ops/restore.sh <arquivo.sql>` → restaura dump selecionado.
@@ -178,6 +178,7 @@ O endpoint `/web` disponibiliza uma interface minimalista e responsiva para envi
 ### Observabilidade
 - Importar `ops/grafana/dashboard-overview.json` no Grafana para visualizar métricas principais (requests, sync failures, notificações).
 - Adicionar `ops/prometheus/alerts.yml` no Alertmanager para alertas de Notion/Sheets/tráfego.
+- Definir `SLACK_ALERT_WEBHOOK` ao subir `alertmanager` para que regras de alerta enviem notificações ao Slack.
 
 ### Backups Automatizados
 - Workflow `backup.yml` agenda (cron 0 2 * * *) execução remota de `ops/backup.sh` via SSH. Configure `SSH_HOST`, `SSH_USERNAME`, `SSH_KEY`, `STAGING_PATH` para habilitar.

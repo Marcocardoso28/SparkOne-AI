@@ -14,6 +14,7 @@ from app.core.events import EventDispatcher
 from app.core.metrics import INGESTION_COUNTER
 from app.models.db.repositories import save_channel_message
 from app.models.schemas import ChannelMessage
+
 from .embeddings import EmbeddingService
 from .memory import MemoryService
 

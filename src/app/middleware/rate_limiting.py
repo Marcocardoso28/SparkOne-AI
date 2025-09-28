@@ -55,7 +55,9 @@ class InMemoryRateLimitStore:
     async def cleanup_expired(self) -> None:
         async with self._lock:
             current_time = time.time()
-            expired = [k for k, v in self._store.items() if v.get("expires_at", 0.0) <= current_time]
+            expired = [
+                k for k, v in self._store.items() if v.get("expires_at", 0.0) <= current_time
+            ]
             for key in expired:
                 del self._store[key]
 
@@ -119,53 +121,54 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         }
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        print(f"[DEBUG] MIDDLEWARE ENTRY - Path: {request.url.path}")
+        
         if self._should_skip_rate_limit(request):
+            print(f"[DEBUG] Skipping rate limit for path: {request.url.path}")
             return await call_next(request)
 
+        print(f"[DEBUG] Applying rate limit for path: {request.url.path}")
         client_id = self._get_client_identifier(request)
         limits = self._get_endpoint_limits(request.url.path)
         rate_limit_key = f"{client_id}:{request.url.path}"
 
-        try:
-            current_count, expires_at = await self.store.increment(
-                rate_limit_key, limits["window"]
+        print(f"[DEBUG] About to call store.increment")
+        current_count, expires_at = await self.store.increment(rate_limit_key, limits["window"])
+        print(f"[DEBUG] store.increment returned: count={current_count}")
+        print(f"[DEBUG] limits for path {request.url.path}: {limits}")
+        print(f"[DEBUG] Checking: {current_count} > {limits['requests']} = {current_count > limits['requests']}")
+
+        if current_count > limits["requests"]:
+            reset_time = int(expires_at)
+            logger.warning(
+                "Rate limit exceeded for %s on %s: %s/%s",
+                client_id,
+                request.url.path,
+                current_count,
+                limits["requests"],
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "error": "Rate limit exceeded",
+                    "limit": limits["requests"],
+                    "window": limits["window"],
+                    "reset_at": reset_time,
+                },
+                headers={
+                    "X-RateLimit-Limit": str(limits["requests"]),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(reset_time),
+                    "Retry-After": str(limits["window"]),
+                },
             )
 
-            if current_count > limits["requests"]:
-                reset_time = int(expires_at)
-                logger.warning(
-                    "Rate limit exceeded for %s on %s: %s/%s",
-                    client_id,
-                    request.url.path,
-                    current_count,
-                    limits["requests"],
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail={
-                        "error": "Rate limit exceeded",
-                        "limit": limits["requests"],
-                        "window": limits["window"],
-                        "reset_at": reset_time,
-                    },
-                    headers={
-                        "X-RateLimit-Limit": str(limits["requests"]),
-                        "X-RateLimit-Remaining": "0",
-                        "X-RateLimit-Reset": str(reset_time),
-                        "Retry-After": str(limits["window"]),
-                    },
-                )
-
-            response = await call_next(request)
-            remaining = max(0, limits["requests"] - current_count)
-            self._set_rate_limit_headers(response, limits, remaining, int(expires_at))
-            return response
-
-        except HTTPException:
-            raise
-        except Exception as exc:  # pragma: no cover - caminho de falha inesperado
-            logger.error("Error in rate limiting middleware: %s", exc)
-            return await call_next(request)
+        print(f"[DEBUG] About to call call_next")
+        response = await call_next(request)
+        print(f"[DEBUG] call_next completed successfully")
+        remaining = max(0, limits["requests"] - current_count)
+        self._set_rate_limit_headers(response, limits, remaining, int(expires_at))
+        return response
 
     def _should_skip_rate_limit(self, request: Request) -> bool:
         static_extensions = {".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg"}
@@ -177,16 +180,37 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return False
 
     def _get_client_identifier(self, request: Request) -> str:
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        if forwarded_for:
-            client_ip = forwarded_for.split(",")[0].strip()
-        else:
-            client_ip = request.headers.get("X-Real-IP") or (request.client.host if request.client else "unknown")
+        print("[DEBUG] _get_client_identifier: Starting client identification")
+        
+        try:
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                client_ip = forwarded_for.split(",")[0].strip()
+            else:
+                client_ip = request.headers.get("X-Real-IP") or (
+                    request.client.host if request.client else "unknown"
+                )
+            print(f"[DEBUG] _get_client_identifier: client_ip = {client_ip}")
 
-        session_cookie = request.cookies.get("sparkone_session")
-        if session_cookie:
-            return f"{client_ip}:{session_cookie[:8]}"
-        return client_ip
+            # Safe handling for accessing cookies
+            try:
+                session_cookie = request.cookies.get("sparkone_session")
+                print("[DEBUG] _get_client_identifier: session_cookie obtained successfully")
+                if session_cookie:
+                    identifier = f"{client_ip}:{session_cookie[:8]}"
+                    print(f"[DEBUG] _get_client_identifier: identifier with session = {identifier}")
+                    return identifier
+            except Exception as cookie_exc:
+                print(f"[DEBUG] _get_client_identifier: Error accessing cookies: {type(cookie_exc).__name__}: {cookie_exc}")
+                # If unable to access cookies, use only IP
+                pass
+            
+            print(f"[DEBUG] _get_client_identifier: identifier without session = {client_ip}")
+            return client_ip
+            
+        except Exception as exc:
+            print(f"[DEBUG] _get_client_identifier: General error: {type(exc).__name__}: {exc}")
+            return "unknown"
 
     def _get_endpoint_limits(self, path: str) -> dict[str, int]:
         if path in self.endpoint_limits:

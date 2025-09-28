@@ -21,7 +21,7 @@ class WhatsAppPayload(BaseModel):
     def parse_timestamp(cls, value: Any) -> datetime | None:  # pragma: no cover - pydantic hook
         if value is None or value == "":
             return None
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return datetime.fromtimestamp(value)
         if isinstance(value, str):
             try:

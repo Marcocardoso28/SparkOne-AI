@@ -20,6 +20,7 @@ from .middleware.metrics import PrometheusMiddleware
 from .middleware.rate_limiting import RateLimitMiddleware, resolve_rate_limit_store
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .middleware.security_logging import SecurityLoggingMiddleware
+from .observability import instrument_application
 from .routers import (
     alerts,
     brief,
@@ -69,6 +70,7 @@ def create_application() -> FastAPI:
         lifespan=_lifespan,
     )
     register_startup_validations(app)
+    instrument_application(app, settings)
 
     allowed_hosts = _split_csv(settings.allowed_hosts)
     if allowed_hosts and allowed_hosts != ["*"]:
@@ -77,10 +79,17 @@ def create_application() -> FastAPI:
     cors_origins = _split_csv(settings.cors_origins) or ["*"]
     cors_methods = _split_csv(settings.cors_allow_methods) or ["*"]
     cors_headers = _split_csv(settings.cors_allow_headers) or ["*"]
+
+    # Configuração CORS segura - não permitir * com credenciais em produção
+    if settings.environment == "production" and cors_origins == ["*"]:
+        cors_origins = ["https://sparkone.macspark.dev", "https://app.sparkone.com"]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if cors_origins == ["*"] else cors_origins,
-        allow_credentials=settings.cors_allow_credentials,
+        allow_origins=cors_origins,
+        allow_credentials=settings.cors_allow_credentials
+        and settings.environment != "production"
+        or cors_origins != ["*"],
         allow_methods=["*"] if cors_methods == ["*"] else cors_methods,
         allow_headers=["*"] if cors_headers == ["*"] else cors_headers,
     )

@@ -283,12 +283,14 @@ async def process_login(
     response = RedirectResponse(url="/web/app", status_code=302)
 
     # Definir cookie de sessão seguro
+    # Em desenvolvimento (HTTP), secure deve ser False
+    is_development = not settings.environment.startswith("prod")
     response.set_cookie(
         key=LOGIN_SESSION_COOKIE,
         value=session_token,
         max_age=3600 * 8,  # 8 horas
         httponly=True,
-        secure=False,  # True em produção com HTTPS
+        secure=not is_development,  # False em desenvolvimento, True em produção
         samesite="lax",
     )
 
@@ -386,7 +388,7 @@ async def submit_web_form(
             conversations = await list_recent_conversations(db_session, limit=10)
         except Exception as e:
             logger.warning("Erro ao buscar conversas recentes", error=str(e))
-            
+
         new_token = _generate_csrf_token()
         context = {
             "request": request,
@@ -419,7 +421,7 @@ async def submit_web_form(
             conversations = await list_recent_conversations(db_session, limit=10)
         except Exception as e:
             logger.warning("Erro ao buscar conversas recentes", error=str(e))
-            
+
         new_token = _generate_csrf_token()
         context = {
             "request": request,
@@ -440,14 +442,14 @@ async def submit_web_form(
         return response
 
     await ingestion.ingest(payload)
-    
+
     # Busca conversas recentes após o envio
     conversations = []
     try:
         conversations = await list_recent_conversations(db_session, limit=10)
     except Exception as e:
         logger.warning("Erro ao buscar conversas recentes", error=str(e))
-    
+
     new_token = _generate_csrf_token()
     response = templates.TemplateResponse(
         "index.html",
@@ -482,7 +484,7 @@ async def ingest_web_payload(
     if not _validate_csrf(request, {"csrf_token": csrf_token}):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": "Token de segurança inválido. Tente novamente."}
+            content={"error": "Token de segurança inválido. Tente novamente."},
         )
     try:
         payload = await _build_web_payload(
@@ -625,10 +627,10 @@ def _validate_csrf(request: Request, form_data: dict) -> bool:
     cookie_token = request.cookies.get("sparkone_csrftoken")
     form_token = form_data.get("csrf_token")  # Corrigido para usar o nome correto
     header_token = request.headers.get("X-CSRFToken")
-    
+
     # Usar token do form ou header
     candidate = form_token or header_token
-    
+
     return cookie_token and candidate and cookie_token == candidate
 
 

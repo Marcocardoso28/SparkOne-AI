@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from src.app.core.validators import (
     SecureChannelMessage,
@@ -32,40 +33,40 @@ class TestInputValidation:
     def test_secure_channel_message_valid(self):
         """Testa validação de mensagem válida."""
         data = {
-            "channel": "test-channel",
+            "channel": "test_channel",
             "sender": "user123",
             "content": "Hello world",
-            "message_type": "text",
+            "message_type": "free_text",
             "extra_data": {"key": "value"},
         }
 
         message = SecureChannelMessage(**data)
-        assert message.channel == "test-channel"
+        assert message.channel == "test_channel"
         assert message.sender == "user123"
         assert message.content == "Hello world"
 
     def test_secure_channel_message_xss_prevention(self):
         """Testa prevenção de XSS."""
         data = {
-            "channel": "test-channel",
+            "channel": "test_channel",
             "sender": "user123",
             "content": "<script>alert('xss')</script>",
-            "message_type": "text",
+            "message_type": "free_text",
         }
 
-        with pytest.raises(ValueError, match="Conteúdo contém padrões perigosos"):
+        with pytest.raises(ValidationError, match="Conteúdo contém padrões não permitidos"):
             SecureChannelMessage(**data)
 
     def test_secure_channel_message_sql_injection_prevention(self):
         """Testa prevenção de SQL Injection."""
         data = {
-            "channel": "test-channel",
+            "channel": "test_channel",
             "sender": "user123",
             "content": "'; DROP TABLE users; --",
-            "message_type": "text",
+            "message_type": "free_text",
         }
 
-        with pytest.raises(ValueError, match="Conteúdo contém padrões perigosos"):
+        with pytest.raises(ValidationError, match="Conteúdo contém padrões não permitidos"):
             SecureChannelMessage(**data)
 
     def test_secure_channel_message_size_limit(self):
@@ -175,9 +176,7 @@ class TestFileUploadValidation:
         file_content = b"x" * 1000
 
         with pytest.raises(HTTPException, match="Arquivo muito grande"):
-            validate_file_upload(
-                file_content=file_content, content_type="text/plain", max_size=500
-            )
+            validate_file_upload(file_content=file_content, content_type="text/plain", max_size=500)
 
 
 class TestSecurityHeaders:

@@ -9,6 +9,7 @@ from app.services.calendar import CalendarService
 from app.services.classification import ClassificationService
 from app.services.personal_coach import PersonalCoachService
 from app.services.tasks import TaskService
+
 from .agno import AgnoBridge
 
 

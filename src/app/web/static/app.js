@@ -148,9 +148,16 @@ if (recordButton) {
 const startDictation = () => {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    setStatus('Ditado por voz não suportado neste navegador.', true);
+    setStatus('❌ Ditado por voz não suportado neste navegador. Use Chrome, Edge ou Safari.', true);
     return;
   }
+
+  // Verificar se está em HTTPS (necessário para Web Speech API)
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    setStatus('❌ Ditado por voz requer HTTPS. Acesse via https:// ou localhost.', true);
+    return;
+  }
+
   recognition = new SpeechRecognition();
   recognition.lang = 'pt-BR';
   recognition.interimResults = false;
@@ -166,28 +173,54 @@ const startDictation = () => {
       messageInput.focus();
     }
   };
+  
   recognition.onerror = (event) => {
     console.error('Erro no ditado:', event.error);
     let errorMessage = `Erro no ditado: ${event.error}`;
     
     if (event.error === 'not-allowed') {
-      errorMessage = 'Permissão de microfone negada para ditado. Clique no ícone de microfone na barra de endereços e permita o acesso.';
+      errorMessage = '🎤 Permissão de microfone negada!\n\n' +
+                    '📋 Como permitir:\n' +
+                    '1. Clique no ícone 🔒 ou 🎤 na barra de endereços\n' +
+                    '2. Selecione "Permitir" para microfone\n' +
+                    '3. Recarregue a página (F5)\n' +
+                    '4. Tente o ditado novamente\n\n' +
+                    '💡 Dica: Em alguns navegadores, você precisa interagir com a página primeiro (clique em qualquer lugar).';
     } else if (event.error === 'no-speech') {
-      errorMessage = 'Nenhuma fala detectada. Tente falar mais próximo ao microfone.';
+      errorMessage = '🔇 Nenhuma fala detectada.\n\n' +
+                    '💡 Dicas:\n' +
+                    '• Fale mais próximo ao microfone\n' +
+                    '• Verifique se o microfone não está mudo\n' +
+                    '• Tente falar mais alto e claro';
     } else if (event.error === 'audio-capture') {
-      errorMessage = 'Erro na captura de áudio. Verifique se o microfone está funcionando.';
+      errorMessage = '🎤 Erro na captura de áudio.\n\n' +
+                    '🔧 Verificações:\n' +
+                    '• Microfone está conectado?\n' +
+                    '• Outros aplicativos estão usando o microfone?\n' +
+                    '• Tente fechar outros programas de áudio';
     } else if (event.error === 'network') {
-      errorMessage = 'Erro de rede durante o ditado. Verifique sua conexão com a internet.';
+      errorMessage = '🌐 Erro de rede durante o ditado.\n\n' +
+                    '📡 Soluções:\n' +
+                    '• Verifique sua conexão com a internet\n' +
+                    '• Tente novamente em alguns segundos\n' +
+                    '• Use o modo offline se disponível';
     } else if (event.error === 'service-not-allowed') {
-      errorMessage = 'Serviço de reconhecimento de voz não permitido. Verifique as configurações do navegador.';
+      errorMessage = '🚫 Serviço de reconhecimento de voz não permitido.\n\n' +
+                    '⚙️ Verificações:\n' +
+                    '• Configurações de privacidade do navegador\n' +
+                    '• Extensões que bloqueiam microfone\n' +
+                    '• Modo incógnito pode ter restrições';
     } else if (event.error === 'bad-grammar') {
-      errorMessage = 'Erro na gramática do reconhecimento de voz.';
+      errorMessage = '📝 Erro na gramática do reconhecimento de voz.\n\n' +
+                    '🔄 Tente novamente com fala mais clara.';
     } else if (event.error === 'language-not-supported') {
-      errorMessage = 'Idioma português não suportado para ditado neste navegador.';
+      errorMessage = '🌍 Idioma português não suportado para ditado neste navegador.\n\n' +
+                    '🔄 Tente usar Chrome ou Edge mais recentes.';
     }
     
     setStatus(errorMessage, true);
   };
+  
   recognition.onend = () => {
     dictating = false;
     if (speechButton) {
@@ -201,10 +234,10 @@ const startDictation = () => {
     if (speechButton) {
       speechButton.textContent = '🛑 Parar ditado';
     }
-    setStatus('Ditando... Fale agora.');
+    setStatus('🎤 Ditando... Fale agora!');
   } catch (error) {
     console.error('Erro ao iniciar ditado:', error);
-    setStatus('Erro ao iniciar ditado. Tente novamente.', true);
+    setStatus('❌ Erro ao iniciar ditado. Verifique as permissões do microfone e tente novamente.', true);
   }
 };
 
@@ -281,6 +314,23 @@ if (form) {
     // Limpar pré-visualizações
     clearImagePreview();
     clearAudioPreview();
+  });
+}
+
+// Adicionar funcionalidade de envio com Enter
+if (messageInput) {
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Previne quebra de linha
+      
+      // Verificar se há conteúdo para enviar
+      const content = messageInput.value.trim();
+      if (content) {
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        form.submit();
+      }
+    }
+    // Shift+Enter permite quebra de linha (comportamento padrão)
   });
 }
 

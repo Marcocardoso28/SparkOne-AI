@@ -109,7 +109,9 @@ class TestE2EFlows:
             mock_orchestrator_instance.handle.assert_called_once()
 
             # Validação de persistência da mensagem
-            stmt = select(ChannelMessageORM).where(ChannelMessageORM.external_id == "test_message_id_001")
+            stmt = select(ChannelMessageORM).where(
+                ChannelMessageORM.external_id == "test_message_id_001"
+            )
             result = await db_session.execute(stmt)
             message_record = result.scalar_one_or_none()
 

@@ -6,6 +6,7 @@ import structlog
 
 from app.models.schemas import ChannelMessage, MessageType
 from app.providers.chat import ChatProviderRouter, LLMGenerationError
+
 from .prompts.orchestrator import CLASSIFICATION_PROMPT, RESPONSE_PROMPT, SYSTEM_PROMPT
 from .tools.parser import safe_json_loads
 

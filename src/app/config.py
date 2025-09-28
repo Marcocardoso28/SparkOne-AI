@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     security_hsts_include_subdomains: bool = True
     security_hsts_preload: bool = False
 
+    otel_enabled: bool = False
+    otel_service_name: str = "sparkone-api"
+    otel_service_namespace: str = "sparkone"
+    otel_exporter_endpoint: AnyHttpUrl | None = None
+    otel_exporter_headers: str | None = None
+    otel_traces_sampler_ratio: float = 0.25
+    otel_debug_console: bool = False
+
     enable_event_dispatcher: bool = False
     event_webhook_url: AnyHttpUrl | None = None
     event_webhook_token: str | None = None
@@ -88,10 +96,18 @@ class Settings(BaseSettings):
         "google_sheets_credentials_path",
         "google_calendar_credentials_path",
         "caldav_url",
+        "otel_exporter_endpoint",
         mode="before",
     )
     @classmethod
     def _sanitize_optional_urls(cls, value: str | AnyHttpUrl | None):  # type: ignore[override]
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
+
+    @field_validator("otel_exporter_headers", mode="before")
+    @classmethod
+    def _sanitize_optional_headers(cls, value: str | None) -> str | None:
         if isinstance(value, str) and value.strip() == "":
             return None
         return value

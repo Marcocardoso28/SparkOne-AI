@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from app.config import get_settings
+
 from .validation import ConfigurationError, validate_critical_config
 
 

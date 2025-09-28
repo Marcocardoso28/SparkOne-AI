@@ -57,7 +57,8 @@ class DocumentIngestionService:
         )
 
         chunk_records = [
-            (index, chunk, vector) for index, (chunk, vector) in enumerate(zip(chunks, vectors, strict=False))
+            (index, chunk, vector)
+            for index, (chunk, vector) in enumerate(zip(chunks, vectors, strict=False))
         ]
         await insert_knowledge_chunks(
             self._session,

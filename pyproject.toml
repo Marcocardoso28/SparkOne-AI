@@ -13,14 +13,14 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Marco Cardoso" }]
 dependencies = [
-    "fastapi>=0.115,<0.116",
-    "uvicorn[standard]>=0.30,<0.31",
+    "fastapi>=0.115,<0.118",
+    "uvicorn[standard]>=0.30,<0.38",
     "pydantic>=2.8,<3",
     "pydantic-settings>=2.3,<3",
     "httpx>=0.28,<0.29",
     "SQLAlchemy[asyncio]>=2.0.30,<2.1",
     "asyncpg>=0.29,<0.31",
-    "alembic>=1.13,<1.15",
+    "alembic>=1.13,<1.17",
     "pgvector>=0.2.5",
     "redis>=5.0,<5.1",
     "structlog>=24.1,<25",
@@ -32,7 +32,14 @@ dependencies = [
     "google-auth>=2.31,<3",
     "google-auth-oauthlib>=1.2,<2",
     "google-api-python-client>=2.134,<3",
-    "python-multipart>=0.0.9"
+    "python-multipart>=0.0.9",
+    "opentelemetry-api>=1.25,<2",
+    "opentelemetry-sdk>=1.25,<2",
+    "opentelemetry-exporter-otlp>=1.25,<2",
+    "opentelemetry-instrumentation-fastapi>=0.46b0,<1",
+    "opentelemetry-instrumentation-httpx>=0.46b0,<1",
+    "opentelemetry-instrumentation-asyncpg>=0.46b0,<1",
+    "opentelemetry-instrumentation-redis>=0.46b0,<1"
 ]
 
 [project.optional-dependencies]
@@ -57,6 +64,8 @@ line-length = 100
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S", "N", "C4", "TID"]
 ignore = ["S101", "S311"]
 
@@ -67,7 +76,7 @@ ignore = ["S101", "S311"]
 docstring-code-format = true
 
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = "-q --cov=src/app --cov-report=term-missing --cov-report=xml --cov-fail-under=60"
 testpaths = ["src/app/tests", "tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]

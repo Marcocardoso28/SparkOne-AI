@@ -93,14 +93,16 @@ body {
 
 #message-input {
   width: 100%;
-  min-height: 160px;
-  padding: 16px;
+  min-height: 80px;
+  max-height: 200px;
+  padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.28);
   background: rgba(15, 23, 42, 0.6);
   color: #e2e8f0;
   resize: vertical;
   font-size: 1rem;
+  line-height: 1.4;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 

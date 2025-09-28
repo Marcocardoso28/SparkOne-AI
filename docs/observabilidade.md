@@ -20,8 +20,12 @@
 - Política: reter 30 dias em staging, 90 dias em produção.
 
 ## Traces
-- Adotar OpenTelemetry para FastAPI: `InstrumentationMiddleware` + exporter OTLP.
+- OpenTelemetry integrado no app (`instrument_application`). Ative com variáveis:
+  - `OTEL_ENABLED=true`
+  - `OTEL_EXPORTER_ENDPOINT=http://otel-collector:4318/v1/traces`
+  - `OTEL_TRACES_SAMPLER_RATIO=0.25` (ajuste conforme volume).
 - Spans mínimos: ingestão, classificação, chamada LLM, persistência, resposta.
+- Habilite `OTEL_DEBUG_CONSOLE=true` apenas em ambientes de teste manual.
 
 ## Dashboards
 - Atualizar `ops/grafana/dashboard-overview.json` com painéis: latência, filas Redis, falhas de webhook, consumo de tokens LLM.

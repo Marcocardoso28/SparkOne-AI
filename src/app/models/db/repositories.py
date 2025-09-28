@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.profiler import profile_query, profile_session
 from app.models.schemas import ChannelMessage
+
 from .events import EventRecord, EventStatus
 from .knowledge import KnowledgeChunkORM, KnowledgeDocumentORM
 from .memory import ConversationMessage, ConversationRole

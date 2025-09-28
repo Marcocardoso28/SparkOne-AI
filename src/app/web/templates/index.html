@@ -39,7 +39,7 @@
           <textarea
             id="message-input"
             name="message"
-            rows="6"
+            rows="3"
             placeholder="Conte ao SparkOne o que precisa..."
           >{{ message or "" }}</textarea>
 
@@ -76,10 +76,10 @@
           <h2>Histórico de Conversas</h2>
           <div class="conversation-list">
             {% for message in conversations %}
-            <div class="conversation-message conversation-message--{{ message.role }}">
+            <div class="conversation-message conversation-message--{{ message.role.lower() }}">
               <div class="conversation-message__header">
                 <span class="conversation-message__role">
-                  {% if message.role == 'user' %}👤 Você{% else %}🤖 SparkOne{% endif %}
+                  {% if message.role.upper() == 'USER' %}👤 Você{% else %}🤖 SparkOne{% endif %}
                 </span>
                 <span class="conversation-message__time">{{ message.created_at.strftime('%H:%M') }}</span>
               </div>

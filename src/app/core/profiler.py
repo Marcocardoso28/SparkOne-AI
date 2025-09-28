@@ -7,8 +7,8 @@ import asyncio
 import functools
 import logging
 import time
-import tracemalloc
 import traceback
+import tracemalloc
 from collections import defaultdict
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
@@ -159,9 +159,11 @@ class DatabaseProfiler:
                 query_type=query_info["query_type"],
                 memory_before=context._memory_before,
                 memory_after=memory_after,
-                cpu_percent=None
-                if context._cpu_before is None or cpu_after is None
-                else (cpu_after + context._cpu_before) / 2,
+                cpu_percent=(
+                    None
+                    if context._cpu_before is None or cpu_after is None
+                    else (cpu_after + context._cpu_before) / 2
+                ),
                 timestamp=time.time(),
                 parameters=parameters if isinstance(parameters, dict) else None,
                 row_count=cursor.rowcount if hasattr(cursor, "rowcount") else None,
@@ -342,13 +344,13 @@ def profile_query(func: F) -> F:
     @functools.wraps(func)
     async def async_wrapper(*args, **kwargs):
         start_time = time.time()
-        memory_before = db_profiler._get_memory_usage()
+        _ = db_profiler._get_memory_usage()  # memory_before não utilizado por enquanto
 
         try:
             result = await func(*args, **kwargs)
 
             duration = time.time() - start_time
-            memory_after = db_profiler._get_memory_usage()
+            _ = db_profiler._get_memory_usage()  # memory_after não utilizado por enquanto
 
             # Registrar métrica de função
             REQUEST_LATENCY.labels(method=func.__name__, endpoint="database_function").observe(
@@ -368,13 +370,13 @@ def profile_query(func: F) -> F:
     @functools.wraps(func)
     def sync_wrapper(*args, **kwargs):
         start_time = time.time()
-        memory_before = db_profiler._get_memory_usage()
+        _ = db_profiler._get_memory_usage()  # memory_before não utilizado por enquanto
 
         try:
             result = func(*args, **kwargs)
 
             duration = time.time() - start_time
-            memory_after = db_profiler._get_memory_usage()
+            _ = db_profiler._get_memory_usage()  # memory_after não utilizado por enquanto
 
             # Registrar métrica de função
             REQUEST_LATENCY.labels(method=func.__name__, endpoint="database_function").observe(

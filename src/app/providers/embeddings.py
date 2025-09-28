@@ -75,11 +75,11 @@ class EmbeddingProvider:
                 "model": model,
                 "input": list(inputs),
             }
-            
+
             # text-embedding-3-large generates 3072 dimensions by default, but we need 1536
             if model == "text-embedding-3-large":
                 embedding_params["dimensions"] = 1536
-                
+
             response = await client.embeddings.create(**embedding_params)
         except OpenAIError as exc:  # pragma: no cover - network error path
             raise RuntimeError(f"Embedding request failed for model {model}") from exc

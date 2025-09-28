@@ -16,7 +16,9 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable):
         correlation_id = request.headers.get("X-Correlation-ID") or uuid.uuid4().hex
         request.state.correlation_id = correlation_id
-        token = structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
+        _ = structlog.contextvars.bind_contextvars(
+            correlation_id=correlation_id
+        )  # token não utilizado
         try:
             response = await call_next(request)
         finally:

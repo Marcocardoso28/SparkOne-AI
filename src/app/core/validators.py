@@ -273,7 +273,7 @@ class SecureWebhookPayload(BaseModel):
 
 class SecureQueryParams(BaseModel):
     """Validador para parâmetros de query seguros."""
-    
+
     limit: int = Field(default=20, ge=1, le=100)
     offset: int = Field(default=0, ge=0)
     threshold: float | None = Field(default=None, ge=0.0, le=10.0)
@@ -295,7 +295,7 @@ class SecureQueryParams(BaseModel):
 
 class SecureLoginCredentials(BaseModel):
     """Validador para credenciais de login seguras."""
-    
+
     username: str = Field(..., min_length=3, max_length=MAX_USERNAME_LENGTH)
     password: str = Field(..., min_length=8, max_length=MAX_PASSWORD_LENGTH)
 
@@ -305,11 +305,11 @@ class SecureLoginCredentials(BaseModel):
         """Valida o nome de usuário."""
         if contains_dangerous_patterns(v):
             raise ValueError("Nome de usuário contém padrões perigosos")
-        
+
         sanitized = sanitize_string(v)
         if len(sanitized.strip()) < 3:
             raise ValueError("Nome de usuário muito curto após sanitização")
-        
+
         return sanitized
 
     @field_validator("password")
@@ -318,19 +318,19 @@ class SecureLoginCredentials(BaseModel):
         """Valida a senha com critérios de segurança."""
         if len(v) < 8:
             raise ValueError("Senha muito fraca")
-        
+
         # Verificar se tem pelo menos uma letra maiúscula, minúscula, número e símbolo
         has_upper = any(c.isupper() for c in v)
         has_lower = any(c.islower() for c in v)
         has_digit = any(c.isdigit() for c in v)
         has_symbol = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in v)
-        
+
         if not (has_upper and has_lower and has_digit and has_symbol):
             raise ValueError("Senha muito fraca")
-        
+
         if contains_dangerous_patterns(v):
             raise ValueError("Senha contém padrões perigosos")
-        
+
         return v
 
 
@@ -536,36 +536,36 @@ def _validate_file_magic_bytes(content: bytes, content_type: str) -> bool:
 def detect_dangerous_patterns(text: str) -> list[str]:
     """
     Detecta padrões perigosos no texto fornecido.
-    
+
     Args:
         text: Texto a ser analisado
-        
+
     Returns:
         Lista de padrões perigosos encontrados
     """
     found_patterns = []
-    
+
     # Verifica XSS
     for pattern in XSS_PATTERNS:
         if re.search(pattern, text, re.IGNORECASE):
             found_patterns.append(f"XSS: {pattern}")
-    
+
     # Verifica SQL Injection
     for pattern in SQL_INJECTION_PATTERNS:
         if re.search(pattern, text, re.IGNORECASE):
             found_patterns.append(f"SQL Injection: {pattern}")
-    
+
     # Verifica Path Traversal
     for pattern in PATH_TRAVERSAL_PATTERNS:
         if re.search(pattern, text, re.IGNORECASE):
             found_patterns.append(f"Path Traversal: {pattern}")
-    
+
     return found_patterns
 
 
 __all__ = [
     "SecureChannelMessage",
-    "SecureWebhookPayload", 
+    "SecureWebhookPayload",
     "SecureQueryParams",
     "SecureLoginCredentials",
     "sanitize_string",

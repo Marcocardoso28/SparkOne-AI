@@ -5,10 +5,9 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 
+from app.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-
-from app.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
