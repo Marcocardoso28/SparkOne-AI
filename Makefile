@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: dev-up dev-down migrate logs ps install-dev fmt fmt-check lint typecheck test check
+.PHONY: dev-up dev-down migrate logs ps install-dev fmt fmt-check lint typecheck test check audit secrets coverage
 
 dev-up:
 	docker compose up --build
@@ -22,18 +22,27 @@ install-dev:
 	$(PYTHON) -m pip install -e .[dev]
 
 fmt:
-	$(PYTHON) -m black src
+	$(PYTHON) -m black src tests
 
 fmt-check:
-	$(PYTHON) -m black --check src
+	$(PYTHON) -m black --check src tests
 
 lint:
-	$(PYTHON) -m ruff check src
+	$(PYTHON) -m ruff check src tests
 
 typecheck:
 	$(PYTHON) -m mypy src
 
 test:
-	$(PYTHON) -m pytest
+	$(PYTHON) -m pytest --cov=src --cov-report=term-missing
+
+coverage:
+	$(PYTHON) -m coverage html
+
+secrets:
+	$(PYTHON) -m pip install --upgrade gitleaks && gitleaks detect --no-banner
+
+audit:
+	$(PYTHON) -m pip install pip-audit && pip-audit -r pyproject.toml
 
 check: fmt-check lint typecheck test

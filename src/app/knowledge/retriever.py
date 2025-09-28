@@ -8,8 +8,8 @@ import structlog
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.db.knowledge import KnowledgeChunkORM, KnowledgeDocumentORM
-from ..providers.embeddings import EmbeddingProvider
+from app.models.db.knowledge import KnowledgeChunkORM, KnowledgeDocumentORM
+from app.providers.embeddings import EmbeddingProvider
 
 logger = structlog.get_logger(__name__)
 

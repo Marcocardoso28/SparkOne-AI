@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.db.repositories import (
+from app.models.db.repositories import (
     create_knowledge_document,
     insert_knowledge_chunks,
 )
-from ..providers.embeddings import EmbeddingProvider
+from app.providers.embeddings import EmbeddingProvider
 
 logger = structlog.get_logger(__name__)
 
@@ -58,8 +57,7 @@ class DocumentIngestionService:
         )
 
         chunk_records = [
-            (index, chunk, vector)
-            for index, (chunk, vector) in enumerate(zip(chunks, vectors))
+            (index, chunk, vector) for index, (chunk, vector) in enumerate(zip(chunks, vectors, strict=False))
         ]
         await insert_knowledge_chunks(
             self._session,

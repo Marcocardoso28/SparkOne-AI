@@ -11,15 +11,19 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from ..config import get_settings
-from ..providers.chat import ChatProviderRouter
-from ..core.database import get_session_factory
-from ..dependencies import build_ingestion_service, get_message_normalizer, get_whatsapp_service
-from ..integrations.google_sheets import GoogleSheetsClient
-from ..services.google_sheets_sync import GoogleSheetsSyncService
-from ..services.brief import BriefService
-from ..core.metrics import WHATSAPP_NOTIFICATION_COUNTER, SHEETS_SYNC_COUNTER, FALLBACK_NOTIFICATION_COUNTER
-from ..services.email import send_email
+from app.config import get_settings
+from app.core.database import get_session_factory
+from app.core.metrics import (
+    FALLBACK_NOTIFICATION_COUNTER,
+    SHEETS_SYNC_COUNTER,
+    WHATSAPP_NOTIFICATION_COUNTER,
+)
+from app.dependencies import build_ingestion_service, get_message_normalizer, get_whatsapp_service
+from app.integrations.google_sheets import GoogleSheetsClient
+from app.providers.chat import ChatProviderRouter
+from app.services.brief import BriefService
+from app.services.email import send_email
+from app.services.google_sheets_sync import GoogleSheetsSyncService
 
 logger = structlog.get_logger(__name__)
 

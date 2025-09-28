@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Annotated, AsyncIterator
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.database import get_db_session
-from ..models.db.tasks import TaskRecord, TaskStatus
-from ..models.db.repositories import update_task_status
+from app.core.database import get_db_session
+from app.models.db.repositories import update_task_status
+from app.models.db.tasks import TaskRecord, TaskStatus
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -25,7 +25,7 @@ class TaskResponse(BaseModel):
     sender: str
 
     @classmethod
-    def from_orm(cls, record: TaskRecord) -> "TaskResponse":
+    def from_orm(cls, record: TaskRecord) -> TaskResponse:
         return cls(
             id=record.id,
             title=record.title,

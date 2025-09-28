@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.app.config import get_settings
+from app.config import get_settings
 
 UPLOAD_DIR = Path("uploads")
 

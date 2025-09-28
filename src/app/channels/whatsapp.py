@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from ..models.schemas import Channel, ChannelMessage, MessageType
+from app.models.schemas import Channel, ChannelMessage
 
 
 class WhatsAppPayload(BaseModel):
@@ -40,7 +40,7 @@ class WhatsAppAdapter:
             channel=Channel.WHATSAPP,
             sender=data.sender,
             content=data.message,
-            created_at=data.timestamp or datetime.now(timezone.utc),
+            created_at=data.timestamp or datetime.now(UTC),
             extra_data=data.extra_data,
         )
 

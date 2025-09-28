@@ -24,7 +24,9 @@ class TaskRecord(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), default=TaskStatus.TODO, nullable=False)
+    status: Mapped[TaskStatus] = mapped_column(
+        Enum(TaskStatus), default=TaskStatus.TODO, nullable=False
+    )
     external_id: Mapped[str | None] = mapped_column(String(255))
     channel: Mapped[str] = mapped_column(String(50), nullable=False)
     sender: Mapped[str] = mapped_column(String(255), nullable=False)

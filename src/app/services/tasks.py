@@ -6,14 +6,13 @@ from datetime import datetime
 from typing import Any
 
 import structlog
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.db.repositories import create_task
-from ..models.db.tasks import TaskStatus
-from ..models.schemas import ChannelMessage
-from ..integrations.notion import NotionClient
-from ..core.metrics import NOTION_SYNC_COUNTER
+from app.core.metrics import NOTION_SYNC_COUNTER
+from app.integrations.notion import NotionClient
+from app.models.db.repositories import create_task
+from app.models.db.tasks import TaskStatus
+from app.models.schemas import ChannelMessage
 
 logger = structlog.get_logger(__name__)
 
@@ -100,9 +99,7 @@ class TaskService:
         if due_at:
             properties["Due"] = {"date": {"start": due_at.isoformat()}}
         if description:
-            properties["Description"] = {
-                "rich_text": [{"text": {"content": description[:2000]}}]
-            }
+            properties["Description"] = {"rich_text": [{"text": {"content": description[:2000]}}]}
 
         return {"properties": properties}
 

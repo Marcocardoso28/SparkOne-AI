@@ -6,7 +6,6 @@ import os
 import shutil
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 UPLOAD_DIR = ROOT / os.getenv("WEB_UPLOAD_DIR", "uploads")
 ENV_FILE = ROOT / ".env"

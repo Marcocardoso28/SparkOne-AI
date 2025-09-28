@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, status
 
-from ..services.alerts import AlertPayload, forward_alerts_to_whatsapp
+from app.services.alerts import AlertPayload, forward_alerts_to_whatsapp
 
 router = APIRouter(prefix="/alerts", tags=["alerts"], include_in_schema=False)
 

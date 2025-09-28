@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import structlog
 
-from ..models.schemas import ChannelMessage, MessageType
-from ..providers.chat import ChatProviderRouter, LLMGenerationError
-from .prompts.orchestrator import SYSTEM_PROMPT, CLASSIFICATION_PROMPT, RESPONSE_PROMPT
+from app.models.schemas import ChannelMessage, MessageType
+from app.providers.chat import ChatProviderRouter, LLMGenerationError
+from .prompts.orchestrator import CLASSIFICATION_PROMPT, RESPONSE_PROMPT, SYSTEM_PROMPT
 from .tools.parser import safe_json_loads
 
 

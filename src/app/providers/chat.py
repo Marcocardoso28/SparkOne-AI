@@ -9,7 +9,7 @@ from typing import Any, Protocol
 import structlog
 from openai import AsyncOpenAI, OpenAIError
 
-from ..config import Settings
+from app.config import Settings
 
 logger = structlog.get_logger(__name__)
 
@@ -19,7 +19,9 @@ ChatMessage = dict[str, Any]
 class ChatProvider(Protocol):
     """Protocol implemented by chat model providers."""
 
-    async def generate(self, messages: Sequence[ChatMessage], **kwargs: Any) -> str:  # pragma: no cover - protocol
+    async def generate(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> str:  # pragma: no cover - protocol
         """Return a textual response for the given chat messages."""
 
 
@@ -56,7 +58,7 @@ class OpenAICompatibleProvider:
                         messages=list(messages),
                         temperature=temperature,
                     )
-            except (OpenAIError, asyncio.TimeoutError) as exc:  # pragma: no cover - network path
+            except (TimeoutError, OpenAIError) as exc:  # pragma: no cover - network path
                 last_error = exc
                 if attempt < self._max_retries:
                     await asyncio.sleep(0.2 * attempt)
@@ -91,7 +93,7 @@ class ChatProviderRouter:
 
         if settings.local_llm_url:
             client = AsyncOpenAI(
-                api_key=settings.local_llm_api_key or "sparkone-local",
+                api_key=settings.local_llm_api_key or "not-required",
                 base_url=str(settings.local_llm_url),
             )
             self._fallback = OpenAICompatibleProvider(

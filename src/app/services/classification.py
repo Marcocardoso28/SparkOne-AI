@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import structlog
 
-from ..agents.agno import AgnoBridge
-from ..core.metrics import CLASSIFICATION_COUNTER
-from ..models.schemas import ChannelMessage, MessageType
+if TYPE_CHECKING:
+    from app.agents.agno import AgnoBridge
+from app.core.metrics import CLASSIFICATION_COUNTER
+from app.models.schemas import ChannelMessage, MessageType
 
 logger = structlog.get_logger(__name__)
 
@@ -14,7 +17,7 @@ logger = structlog.get_logger(__name__)
 class ClassificationService:
     """Heurística com fallback ao AgnoBridge."""
 
-    def __init__(self, agno: AgnoBridge | None = None) -> None:
+    def __init__(self, agno: "AgnoBridge | None" = None) -> None:
         self._agno = agno
 
     async def classify(self, payload: ChannelMessage) -> MessageType:

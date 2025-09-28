@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..core.metrics import REQUEST_COUNT, REQUEST_LATENCY
+from app.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
@@ -22,7 +22,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
         status = response.status_code
 
         REQUEST_COUNT.labels(method=method, path=path, status=status).inc()
-        REQUEST_LATENCY.observe(elapsed)
+        REQUEST_LATENCY.labels(method=method, endpoint=path).observe(elapsed)
 
         return response
 

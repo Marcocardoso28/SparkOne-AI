@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field
 
-from ..models.schemas import Channel, ChannelMessage
+from app.models.schemas import Channel, ChannelMessage
 
 
 class WebUIPayload(BaseModel):
     user_id: str
     content: str
     email: EmailStr | None = None
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     extra_data: dict[str, Any] = Field(default_factory=dict)
 
 

@@ -20,7 +20,7 @@ Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este reposit�
    python -m venv venv
    venv\Scripts\activate  # Windows
    # ou source venv/bin/activate  # Linux/Mac
-   pip install -r requirements.txt
+   pip install .
    ```
 3. Configure as variáveis de ambiente (já configurado para SQLite):
    ```bash

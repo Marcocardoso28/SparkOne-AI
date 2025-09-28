@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..models.schemas import ChannelMessage
-from ..providers.chat import ChatProviderRouter
-from ..settings.persona import DEFAULT_PERSONA_PROMPT
+from app.models.schemas import ChannelMessage
+from app.providers.chat import ChatProviderRouter
+from app.settings.persona import DEFAULT_PERSONA_PROMPT
 
 
 class PersonalCoachService:

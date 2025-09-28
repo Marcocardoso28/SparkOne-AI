@@ -122,6 +122,7 @@ paths:
         2. Sanitização do conteúdo
         3. Roteamento para o orquestrador
         4. Persistência no banco de dados
+        O corpo pode ser enviado diretamente ou dentro de uma chave `payload`; o serviço higieniza automaticamente o formato recebido.
       requestBody:
         required: true
         content:

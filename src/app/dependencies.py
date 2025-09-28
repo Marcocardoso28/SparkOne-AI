@@ -7,26 +7,26 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from .agents.agno import AgnoBridge
+from .agents.orchestrator import Orchestrator
+from .channels import GoogleSheetsAdapter, MessageNormalizer, WebUIAdapter, WhatsAppAdapter
 from .config import get_settings
 from .core.database import get_session_factory
-from .agents.orchestrator import Orchestrator
-from .agents.agno import AgnoBridge
-from .channels import MessageNormalizer, WhatsAppAdapter, GoogleSheetsAdapter, WebUIAdapter
 from .core.events import EventDispatcher, N8nWebhookSink
+from .integrations.caldav import CalDAVClient
+from .integrations.evolution_api import EvolutionAPIClient
+from .integrations.google_calendar import GoogleCalendarClient
+from .integrations.notion import NotionClient
 from .providers.chat import ChatProviderRouter
 from .providers.embeddings import EmbeddingProvider
-from .services.ingestion import IngestionService
-from .services.classification import ClassificationService
-from .services.calendar import CalendarService
-from .services.tasks import TaskService
-from .services.personal_coach import PersonalCoachService
-from .services.embeddings import EmbeddingService
-from .services.memory import MemoryService
 from .services.brief import BriefService
-from .integrations.evolution_api import EvolutionAPIClient
-from .integrations.notion import NotionClient
-from .integrations.google_calendar import GoogleCalendarClient
-from .integrations.caldav import CalDAVClient
+from .services.calendar import CalendarService
+from .services.classification import ClassificationService
+from .services.embeddings import EmbeddingService
+from .services.ingestion import IngestionService
+from .services.memory import MemoryService
+from .services.personal_coach import PersonalCoachService
+from .services.tasks import TaskService
 from .services.whatsapp import WhatsAppService
 
 
@@ -106,7 +106,9 @@ def _get_event_dispatcher() -> EventDispatcher | None:
 
     sinks = []
     if settings.event_webhook_url:
-        sinks.append(N8nWebhookSink(url=str(settings.event_webhook_url), token=settings.event_webhook_token))
+        sinks.append(
+            N8nWebhookSink(url=str(settings.event_webhook_url), token=settings.event_webhook_token)
+        )
 
     if not sinks:
         return None

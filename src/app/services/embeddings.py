@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.db.repositories import upsert_message_embedding
-from ..models.db.message import ChannelMessageORM
-from ..providers.embeddings import EmbeddingProvider
+from app.models.db.message import ChannelMessageORM
+from app.models.db.repositories import upsert_message_embedding
+from app.providers.embeddings import EmbeddingProvider
 
 logger = structlog.get_logger(__name__)
 

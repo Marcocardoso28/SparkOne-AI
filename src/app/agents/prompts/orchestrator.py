@@ -11,8 +11,6 @@ CLASSIFICATION_PROMPT = (
     "campos 'category' e 'summary'. Mensagem: {message}"
 )
 
-RESPONSE_PROMPT = (
-    "Com base na categoria {category} e resumo {summary}, elabore uma resposta curta para o usuário."
-)
+RESPONSE_PROMPT = "Com base na categoria {category} e resumo {summary}, elabore uma resposta curta para o usuário."
 
 __all__ = ["SYSTEM_PROMPT", "CLASSIFICATION_PROMPT", "RESPONSE_PROMPT"]

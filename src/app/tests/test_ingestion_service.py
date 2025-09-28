@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from unittest.mock import patch
-
-from src.app.models.db.base import Base
-from src.app.config import get_settings
-from src.app.models.db.message import ChannelMessageORM
-from src.app.models.schemas import Channel, ChannelMessage, MessageType
-from src.app.services.embeddings import EmbeddingService
-from src.app.services.ingestion import IngestionService
-from src.app.services.memory import MemoryService
+from app.config import get_settings
+from app.models.db.base import Base
+from app.models.db.message import ChannelMessageORM
+from app.models.schemas import Channel, ChannelMessage, MessageType
+from app.services.embeddings import EmbeddingService
+from app.services.ingestion import IngestionService
+from app.services.memory import MemoryService
 
 
 class FakeOrchestrator:
@@ -109,7 +109,10 @@ async def test_ingestion_service_rejects_long_message(session: AsyncSession) -> 
 
     settings = get_settings()
 
-    with patch("src.app.services.ingestion.get_settings", return_value=settings.model_copy(update={"ingestion_max_content_length": 10})):
+    with patch(
+        "src.app.services.ingestion.get_settings",
+        return_value=settings.model_copy(update={"ingestion_max_content_length": 10}),
+    ):
         with pytest.raises(ValueError):
             await service.ingest(payload)
 

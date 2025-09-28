@@ -29,7 +29,7 @@ python -m venv venv
 ### 3. Instalar Dependências
 
 ```powershell
-pip install -r requirements.txt
+pip install .
 # ou se usando pyproject.toml:
 pip install -e .
 ```

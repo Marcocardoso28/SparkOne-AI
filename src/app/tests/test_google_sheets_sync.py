@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.app.channels import MessageNormalizer, GoogleSheetsAdapter
-from src.app.dependencies import build_ingestion_service, get_message_normalizer
-from src.app.models.db.base import Base
-from sqlalchemy import select
-
-from src.app.models.db.message import ChannelMessageORM
-from src.app.services.google_sheets_sync import GoogleSheetsSyncService
-from src.app.services.ingestion import IngestionService
+from app.channels import GoogleSheetsAdapter, MessageNormalizer
+from app.dependencies import build_ingestion_service
+from app.models.db.base import Base
+from app.models.db.message import ChannelMessageORM
+from app.services.google_sheets_sync import GoogleSheetsSyncService
+from app.services.ingestion import IngestionService
 
 
 class FakeGoogleSheetsClient:
@@ -89,7 +88,7 @@ async def test_google_sheets_sync_skips_blank_rows(session: AsyncSession) -> Non
     # O serviço processa todas as linhas válidas (incluindo a primeira linha vazia que não é pulada)
     # e pula apenas as linhas com conteúdo em branco ou apenas espaços
     assert result["processed"] == 2  # Linha vazia + linha válida são processadas
-    assert result["skipped"] == 1    # Apenas a linha com espaços é pulada
+    assert result["skipped"] == 1  # Apenas a linha com espaços é pulada
 
 
 @pytest.mark.asyncio

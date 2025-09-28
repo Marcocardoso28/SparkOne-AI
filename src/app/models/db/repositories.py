@@ -2,31 +2,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Sequence
 
-from sqlalchemy import select, and_, or_, desc, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-from typing import List, Optional, Dict, Any
-import logging
 
+from app.core.profiler import profile_query, profile_session
+from app.models.schemas import ChannelMessage
+from .events import EventRecord, EventStatus
+from .knowledge import KnowledgeChunkORM, KnowledgeDocumentORM
+from .memory import ConversationMessage, ConversationRole
 from .message import ChannelMessageORM
-from .tasks import TaskRecord
-from .events import EventRecord
-from ..schemas import Channel
-from .memory import ConversationMessage
-from ...config import get_settings
-from ...core.profiler import profile_query, profile_session
-
-from ..schemas import ChannelMessage
-from .message import ChannelMessageORM
-from .vector import MessageEmbeddingORM
-from .knowledge import KnowledgeDocumentORM, KnowledgeChunkORM
 from .sheets import SheetsSyncStateORM
 from .tasks import TaskRecord, TaskStatus
-from .events import EventRecord, EventStatus
-from .memory import ConversationMessage, ConversationRole
+from .vector import MessageEmbeddingORM
 
 
 @profile_query
@@ -50,7 +40,9 @@ async def save_channel_message(session: AsyncSession, payload: ChannelMessage) -
 
 
 @profile_query
-async def list_recent_messages(session: AsyncSession, limit: int = 50) -> Sequence[ChannelMessageORM]:
+async def list_recent_messages(
+    session: AsyncSession, limit: int = 50
+) -> Sequence[ChannelMessageORM]:
     """
     Retorna mensagens mais recentes ingeridas.
     Query crítica para dashboard - monitora performance de SELECT com LIMIT.
@@ -251,12 +243,14 @@ async def create_event(
 async def append_conversation_message(
     session: AsyncSession,
     *,
+    conversation_id: str,
     channel: str,
     sender: str,
     role: ConversationRole,
     content: str,
 ) -> ConversationMessage:
     record = ConversationMessage(
+        conversation_id=conversation_id,
         channel=channel,
         sender=sender,
         role=role,

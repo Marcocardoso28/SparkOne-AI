@@ -59,3 +59,7 @@ Thumbs.db
 *.der
 *.jks
 *.keystore
+
+# Auditoria / artefatos locais
+*.cache.json
+audit_cache.json

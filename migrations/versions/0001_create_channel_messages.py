@@ -7,17 +7,16 @@ Create Date: 2025-01-01 00:00:00
 
 from __future__ import annotations
 
-from alembic import op
-import sqlalchemy as sa
-from pgvector.sqlalchemy import Vector
-
 import sys
 from pathlib import Path
+
+import sqlalchemy as sa
+from alembic import op
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from app.models.schemas import Channel, MessageType
+from src.app.models.schemas import Channel, MessageType
 
 revision = "0001"
 down_revision = None

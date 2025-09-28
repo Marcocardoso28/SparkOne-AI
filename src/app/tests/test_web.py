@@ -1,47 +1,44 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
 from fastapi.testclient import TestClient
 
-from src.app.main import create_application
-from src.app.dependencies import get_ingestion_service
-from src.app.config import get_settings
+from app.config import get_settings
+from app.dependencies import get_ingestion_service
+from app.main import create_application
 
 
 def test_web_form_loads_without_password() -> None:
     # Mock das configurações para desabilitar autenticação
-    from unittest.mock import patch
-    from src.app.config import Settings
-    
+    from app.config import Settings
+
     test_settings = Settings()
     test_settings.web_password = None  # Sem senha para testes
-    
+
     app = create_application()
-    
+
     # Override da dependência get_settings
     app.dependency_overrides[get_settings] = lambda: test_settings
-    
+
     client = TestClient(app)
 
     response = client.get("/web")
 
     assert response.status_code == 200
     assert "Envie texto, voz ou imagens" in response.text
-    
+
     # Limpar overrides
     app.dependency_overrides.clear()
 
 
 def test_web_async_ingest_returns_payload() -> None:
     # Mock das configurações para desabilitar autenticação
-    from src.app.config import Settings
-    
+    from app.config import Settings
+
     test_settings = Settings()
     test_settings.web_password = None  # Sem senha para testes
-    
+
     app = create_application()
-    
+
     # Override da dependência get_settings
     app.dependency_overrides[get_settings] = lambda: test_settings
 
@@ -76,16 +73,16 @@ def test_web_async_ingest_returns_payload() -> None:
 
 def test_web_ingest_rejects_empty_submission() -> None:
     # Mock das configurações para desabilitar autenticação
-    from src.app.config import Settings
-    
+    from app.config import Settings
+
     test_settings = Settings()
     test_settings.web_password = None  # Sem senha para testes
-    
+
     app = create_application()
-    
+
     # Override da dependência get_settings
     app.dependency_overrides[get_settings] = lambda: test_settings
-    
+
     client = TestClient(app)
 
     csrf_token = _get_csrf_token(client)
@@ -94,22 +91,22 @@ def test_web_ingest_rejects_empty_submission() -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Digite uma mensagem ou anexe um arquivo."
-    
+
     app.dependency_overrides.clear()
 
 
 def test_web_ingest_rejects_long_message() -> None:
     # Mock das configurações para desabilitar autenticação
-    from src.app.config import Settings
-    
+    from app.config import Settings
+
     test_settings = Settings()
     test_settings.web_password = None  # Sem senha para testes
-    
+
     app = create_application()
-    
+
     # Override da dependência get_settings
     app.dependency_overrides[get_settings] = lambda: test_settings
-    
+
     client = TestClient(app)
 
     csrf_token = _get_csrf_token(client)
@@ -123,22 +120,22 @@ def test_web_ingest_rejects_long_message() -> None:
     )
 
     assert response.status_code == 400
-    
+
     app.dependency_overrides.clear()
 
 
 def test_web_ingest_without_csrf_is_blocked() -> None:
     # Mock das configurações para desabilitar autenticação
-    from src.app.config import Settings
-    
+    from app.config import Settings
+
     test_settings = Settings()
     test_settings.web_password = None  # Sem senha para testes
-    
+
     app = create_application()
-    
+
     # Override da dependência get_settings
     app.dependency_overrides[get_settings] = lambda: test_settings
-    
+
     client = TestClient(app)
 
     _get_csrf_token(client)  # establish cookie
@@ -147,11 +144,12 @@ def test_web_ingest_without_csrf_is_blocked() -> None:
 
     assert response.status_code == 403
     assert response.json()["detail"] == "CSRF token inválido."
-    
+
     app.dependency_overrides.clear()
 
 
 import pytest
+
 
 def test_web_session_timeout_enforced() -> None:
     # Teste temporariamente desabilitado devido a problemas de conexão de rede

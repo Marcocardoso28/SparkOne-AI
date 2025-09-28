@@ -12,7 +12,9 @@ class GooglePlacesClient:  # pragma: no cover - http stub
         self._api_key = api_key
         self._client = httpx.AsyncClient(timeout=timeout)
 
-    async def nearby_search(self, latitude: float, longitude: float, radius: int = 2000) -> dict[str, Any]:
+    async def nearby_search(
+        self, latitude: float, longitude: float, radius: int = 2000
+    ) -> dict[str, Any]:
         url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
         params = {
             "key": self._api_key,

@@ -5,9 +5,7 @@ from __future__ import annotations
 import logging
 
 import structlog
-
 from structlog.contextvars import clear_contextvars
-
 
 _SENSITIVE_KEYS = {
     "openai_api_key",

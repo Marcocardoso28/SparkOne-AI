@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from ..models.schemas import ChannelMessage
+from app.models.schemas import ChannelMessage
 
 
 class ChannelAdapter(Protocol):  # pragma: no cover - protocol

@@ -89,6 +89,8 @@ Content-Type: application/json
 ```
 
 #### Ingestão por Canal Específico
+
+> Observação: não é necessário envolver o corpo em uma chave `payload`. O SparkOne aceita o JSON bruto enviado pelo provedor e o sanitiza automaticamente antes do processamento.
 ```http
 POST /channels/whatsapp
 Content-Type: application/json

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -8,11 +8,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.app.main import create_application
-from src.app.core.database import get_db_session
-from src.app.models.db.base import Base
-from src.app.models.db.tasks import TaskRecord, TaskStatus
-from src.app.models.db.events import EventRecord, EventStatus
+from app.core.database import get_db_session
+from app.main import create_application
+from app.models.db.base import Base
+from app.models.db.events import EventRecord, EventStatus
+from app.models.db.tasks import TaskRecord, TaskStatus
 
 
 @pytest_asyncio.fixture
@@ -32,7 +32,7 @@ async def test_tasks_and_events_endpoints(session: AsyncSession) -> None:
         TaskRecord(
             title="Fazer relatório",
             description=None,
-            due_at=datetime.now(timezone.utc),
+            due_at=datetime.now(UTC),
             status=TaskStatus.TODO,
             channel="web",
             sender="user",
@@ -42,7 +42,7 @@ async def test_tasks_and_events_endpoints(session: AsyncSession) -> None:
         EventRecord(
             title="Reunião",
             description=None,
-            start_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            start_at=datetime.now(UTC) + timedelta(hours=1),
             end_at=None,
             status=EventStatus.CONFIRMED,
             location="Sala",
@@ -89,10 +89,10 @@ async def test_end_to_end_channel_to_task(session: AsyncSession) -> None:
     app = create_application()
     orchestrator = FakeOrchestrator()
 
-    from src.app.services.ingestion import IngestionService
-    from src.app.services.embeddings import EmbeddingService
-    from src.app.services.memory import MemoryService
-    from src.app.channels import MessageNormalizer, WhatsAppAdapter
+    from app.channels import MessageNormalizer, WhatsAppAdapter
+    from app.services.embeddings import EmbeddingService
+    from app.services.ingestion import IngestionService
+    from app.services.memory import MemoryService
 
     embedding = EmbeddingService(session=session, provider=None)
     memory = MemoryService(session=session)
@@ -113,18 +113,22 @@ async def test_end_to_end_channel_to_task(session: AsyncSession) -> None:
 
     app.dependency_overrides[get_db_session] = override_db_session
 
-    from src.app.dependencies import get_ingestion_service, get_message_normalizer
+    from app.dependencies import get_ingestion_service, get_message_normalizer
 
     app.dependency_overrides[get_ingestion_service] = override_ingestion_service
-    app.dependency_overrides[get_message_normalizer] = lambda: MessageNormalizer([WhatsAppAdapter()])
+    app.dependency_overrides[get_message_normalizer] = lambda: MessageNormalizer(
+        [WhatsAppAdapter()]
+    )
 
     client = TestClient(app)
-    response = client.post("/channels/whatsapp", json={"from": "user", "message": "Criar tarefa importante"})
+    response = client.post(
+        "/channels/whatsapp", json={"from": "user", "message": "Criar tarefa importante"}
+    )
     assert response.status_code == 202
 
     # Aguardar o commit da sessão
     await session.commit()
-    
+
     stored = (await session.execute(select(TaskRecord))).scalars().all()
     # O teste verifica se o orquestrador foi chamado, não necessariamente se tarefas foram criadas
     # pois isso depende da implementação do orquestrador real

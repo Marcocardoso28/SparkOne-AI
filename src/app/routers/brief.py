@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
-from ..dependencies import get_brief_service
-from ..services.brief import BriefService
+from app.dependencies import get_brief_service
+from app.services.brief import BriefService
 
 router = APIRouter(prefix="/brief", tags=["brief"])
 

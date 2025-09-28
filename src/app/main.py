@@ -6,20 +6,33 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .config import get_settings
-from .routers import health, ingest, channels, web, webhooks, brief, tasks, events, metrics, alerts, profiler
-from fastapi.responses import RedirectResponse
-from .middleware.security import InMemoryRateLimiter
-from .middleware.metrics import PrometheusMiddleware
-from .middleware.security_headers import SecurityHeadersMiddleware
-from .middleware.correlation import CorrelationIdMiddleware
 from .core.logging import configure_logging
 from .core.startup import register_startup_validations
 from .dependencies import get_evolution_client, get_notion_client
+from .middleware.correlation import CorrelationIdMiddleware
+from .middleware.metrics import PrometheusMiddleware
+from .middleware.rate_limiting import RateLimitMiddleware, resolve_rate_limit_store
+from .middleware.security_headers import SecurityHeadersMiddleware
+from .middleware.security_logging import SecurityLoggingMiddleware
+from .routers import (
+    alerts,
+    brief,
+    channels,
+    events,
+    health,
+    ingest,
+    metrics,
+    profiler,
+    tasks,
+    web,
+    webhooks,
+)
 
 
 def _split_csv(value: str) -> list[str]:
@@ -30,8 +43,9 @@ def _split_csv(value: str) -> list[str]:
 async def _lifespan(app: FastAPI):
     # Startup
     from .core.startup import validate_configuration
+
     await validate_configuration()
-    
+
     try:
         yield
     finally:
@@ -71,11 +85,47 @@ def create_application() -> FastAPI:
         allow_headers=["*"] if cors_headers == ["*"] else cors_headers,
     )
     app.add_middleware(CorrelationIdMiddleware)
+
+    # Rate limiting middleware - ajustado para desenvolvimento
+    if settings.environment == "development":
+        # Limites mais permissivos para desenvolvimento
+        endpoint_limits = {
+            "/web/login": {"requests": 50, "window": 300},  # 50 tentativas por 5 min
+            "/web/logout": {"requests": 100, "window": 300},  # 100 por 5 min
+            "/ingest": {"requests": 500, "window": 3600},  # 500 por hora
+            "/channels/": {"requests": 300, "window": 3600},  # 300 por hora
+            "/webhooks/": {"requests": 1000, "window": 3600},  # 1000 por hora
+            "/web": {"requests": 2000, "window": 3600},  # 2000 por hora
+            "/web/ingest": {"requests": 1000, "window": 3600},  # 1000 por hora
+            "/health": {"requests": 10000, "window": 3600},  # 10000 por hora
+            "/metrics": {"requests": 5000, "window": 3600},  # 5000 por hora
+        }
+    else:
+        # Limites mais restritivos para produção
+        endpoint_limits = {
+            "/web/login": {"requests": 5, "window": 900},  # 5 tentativas por 15 min
+            "/web/logout": {"requests": 10, "window": 300},  # 10 por 5 min
+            "/ingest": {"requests": 50, "window": 3600},  # 50 por hora
+            "/channels/": {"requests": 30, "window": 3600},  # 30 por hora
+            "/webhooks/": {"requests": 100, "window": 3600},  # 100 por hora
+            "/web": {"requests": 200, "window": 3600},  # 200 por hora
+            "/web/ingest": {"requests": 100, "window": 3600},  # 100 por hora
+            "/health": {"requests": 1000, "window": 3600},  # 1000 por hora
+            "/metrics": {"requests": 500, "window": 3600},  # 500 por hora
+        }
+
+    rate_limit_store = resolve_rate_limit_store(settings.redis_url)
     app.add_middleware(
-        InMemoryRateLimiter,
-        max_requests=120 if settings.environment == "development" else 60,
-        window_seconds=60,
+        RateLimitMiddleware,
+        store=rate_limit_store,
+        default_requests=1000 if settings.environment == "development" else 100,
+        default_window=3600,
+        endpoint_limits=endpoint_limits,
     )
+
+    # Security logging middleware para auditoria
+    app.add_middleware(SecurityLoggingMiddleware)
+
     app.add_middleware(PrometheusMiddleware)
     app.add_middleware(
         SecurityHeadersMiddleware,
@@ -95,12 +145,12 @@ def create_application() -> FastAPI:
     app.include_router(metrics.router)
     app.include_router(alerts.router)
     app.include_router(profiler.router)
-    
+
     @app.get("/")
     async def root():
         """Redirect root to web interface."""
         return RedirectResponse(url="/web")
-    
+
     static_dir = Path(__file__).resolve().parent / "web" / "static"
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
     return app

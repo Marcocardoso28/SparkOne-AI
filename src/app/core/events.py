@@ -54,7 +54,9 @@ class N8nWebhookSink:
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"
         async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.post(self._url, json={"event": event_name, "payload": payload}, headers=headers)
+            response = await client.post(
+                self._url, json={"event": event_name, "payload": payload}, headers=headers
+            )
             response.raise_for_status()
 
 

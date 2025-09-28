@@ -4,17 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
-
-import structlog
 from zoneinfo import ZoneInfo
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.schemas import ChannelMessage
-from ..models.db.repositories import create_event
-from ..models.db.events import EventStatus
-from ..integrations.caldav import CalDAVClient
-from ..integrations.google_calendar import GoogleCalendarClient
+from app.integrations.caldav import CalDAVClient
+from app.integrations.google_calendar import GoogleCalendarClient
+from app.models.db.events import EventStatus
+from app.models.db.repositories import create_event
+from app.models.schemas import ChannelMessage
 
 logger = structlog.get_logger(__name__)
 
@@ -40,7 +39,9 @@ class CalendarService:
     async def handle(self, payload: ChannelMessage) -> dict[str, Any]:
         """Create local event and push to provider if configured."""
 
-        start_at = self._parse_datetime(payload.extra_data.get("start_at")) or datetime.now(self._default_timezone)
+        start_at = self._parse_datetime(payload.extra_data.get("start_at")) or datetime.now(
+            self._default_timezone
+        )
         end_at = self._parse_datetime(payload.extra_data.get("end_at"))
         location = payload.extra_data.get("location")
         description = payload.extra_data.get("description")
@@ -62,7 +63,9 @@ class CalendarService:
         provider: str | None = None
         if self._google and self._calendar_id:
             try:
-                event_body = self._build_google_event(record.title, start_at, end_at, description, location)
+                event_body = self._build_google_event(
+                    record.title, start_at, end_at, description, location
+                )
                 response = await self._google.insert_event(self._calendar_id, event_body)
                 external_id = response.get("id") if isinstance(response, dict) else None
                 provider = "google"

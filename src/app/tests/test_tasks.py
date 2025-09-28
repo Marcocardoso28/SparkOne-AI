@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.app.services.tasks import TaskService
-from src.app.models.db.base import Base
-from src.app.models.db.tasks import TaskRecord
-from src.app.models.schemas import Channel, ChannelMessage
+from app.models.db.base import Base
+from app.models.db.tasks import TaskRecord
+from app.models.schemas import Channel, ChannelMessage
+from app.services.tasks import TaskService
 
 
 class DummyNotionClient:
@@ -45,7 +45,10 @@ async def test_task_service_creates_record(session: AsyncSession) -> None:
         channel=Channel.WEB,
         sender="tester",
         content="Preparar relatório",
-        extra_data={"description": "Detalhar itens", "due_at": datetime.now(timezone.utc).isoformat()},
+        extra_data={
+            "description": "Detalhar itens",
+            "due_at": datetime.now(UTC).isoformat(),
+        },
     )
 
     result = await service.handle(payload)

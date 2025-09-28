@@ -11,13 +11,19 @@
     <main class="shell">
       <section class="panel">
         <header class="panel__header">
-          <div>
-            <p class="panel__eyebrow">SparkOne · Assistente pessoal</p>
-            <h1>Envie texto, voz ou imagens</h1>
-            <p class="panel__description">
-              A entrada é roteada para o pipeline padrão do SparkOne. As mensagens herdam a persona oficial e
-              alimentam a memória recente.
-            </p>
+          <div class="header-container">
+            <div class="panel__header">
+                <div class="panel__eyebrow">SparkOne</div>
+                <h1>Bem-vindo, {{ user.name }}!</h1>
+                <div class="panel__description">
+                    Sua plataforma de IA está pronta para uso.
+                </div>
+            </div>
+            <form method="post" action="/web/logout" class="logout-form">
+              <button type="submit" class="button button--ghost logout-button">
+                🚪 Sair
+              </button>
+            </form>
           </div>
         </header>
 
@@ -63,6 +69,26 @@
         </form>
 
         <div class="status" id="status" role="status" aria-live="polite"></div>
+
+        <!-- Seção de Histórico de Conversas -->
+        {% if conversations %}
+        <section class="conversation-history">
+          <h2>Histórico de Conversas</h2>
+          <div class="conversation-list">
+            {% for message in conversations %}
+            <div class="conversation-message conversation-message--{{ message.role }}">
+              <div class="conversation-message__header">
+                <span class="conversation-message__role">
+                  {% if message.role == 'user' %}👤 Você{% else %}🤖 SparkOne{% endif %}
+                </span>
+                <span class="conversation-message__time">{{ message.created_at.strftime('%H:%M') }}</span>
+              </div>
+              <div class="conversation-message__content">{{ message.content }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
       </section>
 
       <aside class="sidebar">

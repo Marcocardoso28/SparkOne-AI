@@ -6,7 +6,7 @@ import asyncio
 import smtplib
 from email.message import EmailMessage
 
-from ..config import get_settings
+from app.config import get_settings
 
 
 async def send_email(subject: str, body: str) -> None:
@@ -32,7 +32,9 @@ async def send_email(subject: str, body: str) -> None:
     )
 
 
-def _send(host: str, port: int, username: str | None, password: str | None, message: EmailMessage) -> None:
+def _send(
+    host: str, port: int, username: str | None, password: str | None, message: EmailMessage
+) -> None:
     with smtplib.SMTP(host, port) as server:
         server.starttls()
         if username and password:

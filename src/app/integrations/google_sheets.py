@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-
 
 SCOPES: Sequence[str] = ("https://www.googleapis.com/auth/spreadsheets",)
 

@@ -6,7 +6,7 @@ import asyncio
 
 import structlog
 
-from ..integrations.evolution_api import EvolutionAPIClient
+from app.integrations.evolution_api import EvolutionAPIClient
 
 logger = structlog.get_logger(__name__)
 

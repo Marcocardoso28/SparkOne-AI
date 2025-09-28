@@ -1,0 +1,73 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    name: Scan for secrets
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install git-secrets
+      run: |
+        git clone https://github.com/awslabs/git-secrets.git
+        cd git-secrets
+        sudo make install
+    
+    - name: Configure git-secrets
+      run: |
+        git secrets --register-aws
+        git secrets --install
+        
+        # Adicionar padrões customizados
+        git secrets --add '[a-zA-Z0-9_-]*[aA][pP][iI][_-]?[kK][eE][yY][a-zA-Z0-9_-]*\s*=\s*['\''"][a-zA-Z0-9_-]{20,}['\''"]'
+        git secrets --add '[a-zA-Z0-9_-]*[tT][oO][kK][eE][nN][a-zA-Z0-9_-]*\s*=\s*['\''"][a-zA-Z0-9_-]{20,}['\''"]'
+        git secrets --add 'OPENAI_API_KEY\s*=\s*['\''"]sk-[a-zA-Z0-9]{48}['\''"]'
+        git secrets --add 'changeme'
+        git secrets --add 'your-api-key-here'
+        git secrets --add '-----BEGIN [A-Z ]+PRIVATE KEY-----'
+    
+    - name: Scan repository
+      run: |
+        git secrets --scan
+    
+    - name: Scan history
+      run: |
+        git secrets --scan-history
+
+  dependency-scan:
+    runs-on: ubuntu-latest
+    name: Dependency vulnerability scan
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install safety
+      run: pip install safety
+    
+    - name: Scan dependencies
+      run: |
+        pip install .
+        safety check --json --output safety-report.json || true
+    
+    - name: Upload safety report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: safety-report
+        path: safety-report.json

@@ -5,10 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from openai import AsyncOpenAI
-from openai import OpenAIError
+from openai import AsyncOpenAI, OpenAIError
 
-from ..config import Settings
+from app.config import Settings
 
 
 class EmbeddingProvider:
@@ -27,7 +26,7 @@ class EmbeddingProvider:
 
         if settings.local_llm_url:
             self._local_client = AsyncOpenAI(
-                api_key=settings.local_llm_api_key or "sparkone-local",
+                api_key=settings.local_llm_api_key or "not-required",
                 base_url=str(settings.local_llm_url),
             )
 
@@ -71,7 +70,17 @@ class EmbeddingProvider:
         inputs: Sequence[str],
     ) -> list[list[float]]:
         try:
-            response = await client.embeddings.create(model=model, input=list(inputs))
+            # Configure dimensions for text-embedding-3-large to match database schema (1536)
+            embedding_params: dict[str, Any] = {
+                "model": model,
+                "input": list(inputs),
+            }
+            
+            # text-embedding-3-large generates 3072 dimensions by default, but we need 1536
+            if model == "text-embedding-3-large":
+                embedding_params["dimensions"] = 1536
+                
+            response = await client.embeddings.create(**embedding_params)
         except OpenAIError as exc:  # pragma: no cover - network error path
             raise RuntimeError(f"Embedding request failed for model {model}") from exc
 

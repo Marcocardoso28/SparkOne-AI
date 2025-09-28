@@ -7,12 +7,12 @@ from typing import Any
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..channels import MessageNormalizer
-from ..models.schemas import ChannelMessage
-from ..models.db.repositories import update_sheets_sync_state, get_sheets_sync_state
-from ..integrations.google_sheets import GoogleSheetsClient
-from ..services.ingestion import IngestionService
-from ..core.metrics import SHEETS_SYNC_COUNTER
+from app.channels import MessageNormalizer
+from app.core.metrics import SHEETS_SYNC_COUNTER
+from app.integrations.google_sheets import GoogleSheetsClient
+from app.models.db.repositories import get_sheets_sync_state, update_sheets_sync_state
+from app.models.schemas import ChannelMessage
+from app.services.ingestion import IngestionService
 
 logger = structlog.get_logger(__name__)
 

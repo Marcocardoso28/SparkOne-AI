@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from prometheus_client import Counter, Histogram
 
-
 REQUEST_COUNT = Counter(
     "sparkone_http_requests_total",
     "Total HTTP requests",
@@ -14,6 +13,7 @@ REQUEST_COUNT = Counter(
 REQUEST_LATENCY = Histogram(
     "sparkone_http_request_latency_seconds",
     "Latency of HTTP requests",
+    ["method", "endpoint"],
     buckets=(0.05, 0.1, 0.3, 0.5, 1, 2, 5),
 )
 

@@ -18,7 +18,9 @@ class EvolutionAPIClient:
             limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
         )
 
-    async def send_message(self, payload: dict[str, Any]) -> httpx.Response:  # pragma: no cover - http call
+    async def send_message(
+        self, payload: dict[str, Any]
+    ) -> httpx.Response:  # pragma: no cover - http call
         response = await self._client.post("/messages", json=payload)
         response.raise_for_status()
         return response

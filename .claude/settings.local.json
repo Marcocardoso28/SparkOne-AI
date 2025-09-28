@@ -6,7 +6,19 @@
       "mcp__context-7__get-library-docs",
       "mcp__exa-search__web_search_exa",
       "Bash(find:*)",
-      "Bash(pytest:*)"
+      "Bash(pytest:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(venv\\Scripts\\activate:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(PYTHONPATH=. pytest tests/smoke/test_health.py)",
+      "Bash(make:*)",
+      "Bash(python -m black:*)",
+      "Bash(python:*)",
+      "Bash(PYTHONPATH=. python -m pytest --cov=src --cov-report=term-missing)",
+      "Bash(tree:*)",
+      "Bash(PYTHONPATH=. python -m pytest --collect-only -q)"
     ],
     "deny": [],
     "ask": []

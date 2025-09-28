@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import re
+from typing import Any
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..agents.orchestrator import Orchestrator
-from ..config import get_settings
-from ..core.events import EventDispatcher
-from ..core.metrics import INGESTION_COUNTER
-from ..models.db.repositories import save_channel_message
-from ..models.schemas import ChannelMessage
+from app.agents.orchestrator import Orchestrator
+from app.config import get_settings
+from app.core.events import EventDispatcher
+from app.core.metrics import INGESTION_COUNTER
+from app.models.db.repositories import save_channel_message
+from app.models.schemas import ChannelMessage
 from .embeddings import EmbeddingService
 from .memory import MemoryService
 
@@ -76,7 +75,9 @@ class IngestionService:
             result = await self._orchestrator.handle(payload)
         except Exception as exc:  # pragma: no cover - orchestrator failure path
             INGESTION_COUNTER.labels(status="failed").inc()
-            bound_logger.exception("ingestion_orchestrator_failed", error=str(exc), message_id=message.id)
+            bound_logger.exception(
+                "ingestion_orchestrator_failed", error=str(exc), message_id=message.id
+            )
             raise
 
         INGESTION_COUNTER.labels(status="processed").inc()

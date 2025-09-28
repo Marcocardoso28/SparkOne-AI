@@ -24,6 +24,4 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'cd ${{ secrets.STAGING_PATH }} && ./ops/backup.sh backups'
 
       - name: Download latest backup (placeholder)
-        run: echo "Configure artifact download via scp if necessário."
-*** End Patch
-PATCH
+        run: echo "Configure artifact download via scp se/quando necessário."

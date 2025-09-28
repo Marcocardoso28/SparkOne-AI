@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.database import get_db_session
-from ..models.db.events import EventRecord, EventStatus
+from app.core.database import get_db_session
+from app.models.db.events import EventRecord, EventStatus
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -24,7 +24,7 @@ class EventResponse(BaseModel):
     location: str | None
 
     @classmethod
-    def from_record(cls, record: EventRecord) -> "EventResponse":
+    def from_record(cls, record: EventRecord) -> EventResponse:
         return cls(
             id=record.id,
             title=record.title,
@@ -46,7 +46,7 @@ async def list_events(
 ) -> list[EventResponse]:
     stmt = select(EventRecord).order_by(EventRecord.start_at.asc()).limit(limit)
     if upcoming_only:
-        stmt = stmt.where(EventRecord.start_at >= datetime.now(timezone.utc))
+        stmt = stmt.where(EventRecord.start_at >= datetime.now(UTC))
     result = await session.execute(stmt)
     return [EventResponse.from_record(row) for row in result.scalars()]
 

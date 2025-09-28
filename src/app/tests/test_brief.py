@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.app.main import create_application
-from src.app.dependencies import get_brief_service
-from src.app.models.db.base import Base
-from src.app.models.db.tasks import TaskRecord, TaskStatus
-from src.app.models.db.events import EventRecord, EventStatus
-from src.app.models.db.memory import ConversationMessage, ConversationRole
-from src.app.services.brief import BriefService
+from app.dependencies import get_brief_service
+from app.main import create_application
+from app.models.db.base import Base
+from app.models.db.events import EventRecord, EventStatus
+from app.models.db.memory import ConversationMessage, ConversationRole
+from app.models.db.tasks import TaskRecord, TaskStatus
+from app.services.brief import BriefService
 
 
 @pytest_asyncio.fixture
@@ -34,7 +34,7 @@ async def test_structured_brief_endpoint(monkeypatch, session: AsyncSession) -> 
         TaskRecord(
             title="Task",
             description=None,
-            due_at=datetime.now(timezone.utc),
+            due_at=datetime.now(UTC),
             status=TaskStatus.TODO,
             channel="web",
             sender="user",
@@ -44,7 +44,7 @@ async def test_structured_brief_endpoint(monkeypatch, session: AsyncSession) -> 
         EventRecord(
             title="Meeting",
             description=None,
-            start_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            start_at=datetime.now(UTC) + timedelta(hours=1),
             end_at=None,
             status=EventStatus.CONFIRMED,
             location=None,
@@ -54,6 +54,7 @@ async def test_structured_brief_endpoint(monkeypatch, session: AsyncSession) -> 
     )
     session.add(
         ConversationMessage(
+            conversation_id="web_user",
             channel="web",
             sender="user",
             role=ConversationRole.USER,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import ForeignKey, JSON
+from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, TimestampMixin
@@ -27,7 +27,9 @@ class MessageEmbeddingORM(TimestampMixin, Base):
     __tablename__ = "message_embeddings"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    message_id: Mapped[int] = mapped_column(ForeignKey("channel_messages.id", ondelete="CASCADE"), unique=True)
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("channel_messages.id", ondelete="CASCADE"), unique=True
+    )
     embedding: Mapped[Any] = mapped_column(EMBEDDING_TYPE, nullable=False)
     content: Mapped[str] = mapped_column(nullable=False)
 

@@ -1,7 +1,7 @@
 import pytest
 
-from src.app.models.schemas import Channel, ChannelMessage, MessageType
-from src.app.services.classification import ClassificationService
+from app.models.schemas import Channel, ChannelMessage, MessageType
+from app.services.classification import ClassificationService
 
 
 @pytest.mark.parametrize(

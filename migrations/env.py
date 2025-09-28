@@ -2,30 +2,18 @@
 
 from __future__ import annotations
 
+import sys
 from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-import sys
-from pathlib import Path
-
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from app.models.db.base import Base
 # Import all models so they are registered with Base.metadata
-from app.models.db import (
-    ChannelMessageORM,
-    MessageEmbeddingORM,
-    KnowledgeDocumentORM,
-    KnowledgeChunkORM,
-    SheetsSyncStateORM,
-    TaskRecord,
-    EventRecord,
-    ConversationMessage,
-)
+from src.app.models.db.base import Base
 
 config = context.config
 if config.config_file_name is not None:

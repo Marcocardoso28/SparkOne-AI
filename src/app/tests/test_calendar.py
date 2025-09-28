@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.app.services.calendar import CalendarService
-from src.app.models.db.base import Base
-from src.app.models.db.events import EventRecord
-from src.app.models.schemas import Channel, ChannelMessage
+from app.models.db.base import Base
+from app.models.db.events import EventRecord
+from app.models.schemas import Channel, ChannelMessage
+from app.services.calendar import CalendarService
 
 
 class DummyCalDAVClient:
@@ -33,7 +33,7 @@ async def session() -> AsyncSession:
 async def test_calendar_service_creates_event(session: AsyncSession) -> None:
     caldav = DummyCalDAVClient()
     service = CalendarService(session=session, caldav_client=caldav)
-    start = datetime.now(timezone.utc)
+    start = datetime.now(UTC)
     payload = ChannelMessage(
         channel=Channel.WEB,
         sender="tester",

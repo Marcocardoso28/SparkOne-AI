@@ -1,13 +1,13 @@
 import pytest
 
-from src.app.channels import (
-    MessageNormalizer,
-    WhatsAppAdapter,
-    GoogleSheetsAdapter,
-    WebUIAdapter,
+from app.channels import (
     ChannelNotRegisteredError,
+    GoogleSheetsAdapter,
+    MessageNormalizer,
+    WebUIAdapter,
+    WhatsAppAdapter,
 )
-from src.app.models.schemas import Channel
+from app.models.schemas import Channel
 
 
 @pytest.mark.asyncio

@@ -7,8 +7,8 @@ from datetime import datetime
 from sqlalchemy import JSON, Enum, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.models.schemas import Channel, MessageType
 from .base import Base, TimestampMixin
-from ..schemas import Channel, MessageType
 
 
 class ChannelMessageORM(TimestampMixin, Base):

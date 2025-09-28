@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Iterable
-
 from fastapi import FastAPI
 
-from ..config import get_settings
+from app.config import get_settings
+from .validation import ConfigurationError, validate_critical_config
 
 
 async def validate_configuration() -> None:  # pragma: no cover - simple config check
     """Validate required configuration settings."""
     settings = get_settings()
+
+    # Use the new comprehensive validation
+    try:
+        validate_critical_config(settings)
+    except ConfigurationError as e:
+        raise RuntimeError(str(e)) from e
+
+    # Keep existing specific validations for backward compatibility
     missing: list[str] = []
 
     if settings.require_agno and not (settings.openai_api_key or settings.local_llm_url):
@@ -48,6 +55,7 @@ async def validate_configuration() -> None:  # pragma: no cover - simple config 
 
 def register_startup_validations(app: FastAPI) -> None:
     """Register startup validations using deprecated on_event (kept for compatibility)."""
+
     @app.on_event("startup")
     async def _validate_configuration() -> None:
         await validate_configuration()

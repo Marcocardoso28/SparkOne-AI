@@ -15,7 +15,9 @@ class GoogleCalendarClient:
     """Async-friendly wrapper around Google Calendar API v3."""
 
     def __init__(self, credentials_path: str) -> None:
-        credentials = Credentials.from_service_account_file(credentials_path, scopes=CALENDAR_SCOPES)
+        credentials = Credentials.from_service_account_file(
+            credentials_path, scopes=CALENDAR_SCOPES
+        )
         self._service = build("calendar", "v3", credentials=credentials, cache_discovery=False)
 
     async def insert_event(self, calendar_id: str, event: dict[str, Any]) -> dict[str, Any]:
@@ -28,7 +30,9 @@ class GoogleCalendarClient:
 
         return await asyncio.to_thread(_insert)
 
-    async def list_events(self, calendar_id: str, time_min: str, time_max: str) -> list[dict[str, Any]]:
+    async def list_events(
+        self, calendar_id: str, time_min: str, time_max: str
+    ) -> list[dict[str, Any]]:
         def _list() -> list[dict[str, Any]]:
             result = (
                 self._service.events()

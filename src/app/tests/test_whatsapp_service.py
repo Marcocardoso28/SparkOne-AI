@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.app.services.whatsapp import WhatsAppService
+from app.services.whatsapp import WhatsAppService
 
 
 class DummyClient:

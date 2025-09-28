@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from src.app.main import create_application
+from app.main import create_application
 
 
 @pytest.fixture

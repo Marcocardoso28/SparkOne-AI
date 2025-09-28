@@ -106,8 +106,22 @@ const startRecording = async () => {
     updateRecordButton();
     setStatus('Gravando...');
   } catch (error) {
-    setStatus('Não foi possível acessar o microfone.', true);
-    console.error(error);
+    console.error('Erro ao acessar microfone:', error);
+    let errorMessage = 'Não foi possível acessar o microfone.';
+    
+    if (error.name === 'NotAllowedError') {
+      errorMessage = 'Permissão de microfone negada. Clique no ícone de microfone na barra de endereços e permita o acesso.';
+    } else if (error.name === 'NotFoundError') {
+      errorMessage = 'Nenhum microfone encontrado. Verifique se há um microfone conectado.';
+    } else if (error.name === 'NotReadableError') {
+      errorMessage = 'Microfone está sendo usado por outro aplicativo. Feche outros programas que possam estar usando o microfone.';
+    } else if (error.name === 'OverconstrainedError') {
+      errorMessage = 'Configurações de áudio não suportadas pelo dispositivo.';
+    } else if (error.name === 'SecurityError') {
+      errorMessage = 'Acesso ao microfone bloqueado por política de segurança. Verifique se está usando HTTPS.';
+    }
+    
+    setStatus(errorMessage, true);
   }
 };
 
@@ -153,7 +167,26 @@ const startDictation = () => {
     }
   };
   recognition.onerror = (event) => {
-    setStatus(`Erro no ditado: ${event.error}`, true);
+    console.error('Erro no ditado:', event.error);
+    let errorMessage = `Erro no ditado: ${event.error}`;
+    
+    if (event.error === 'not-allowed') {
+      errorMessage = 'Permissão de microfone negada para ditado. Clique no ícone de microfone na barra de endereços e permita o acesso.';
+    } else if (event.error === 'no-speech') {
+      errorMessage = 'Nenhuma fala detectada. Tente falar mais próximo ao microfone.';
+    } else if (event.error === 'audio-capture') {
+      errorMessage = 'Erro na captura de áudio. Verifique se o microfone está funcionando.';
+    } else if (event.error === 'network') {
+      errorMessage = 'Erro de rede durante o ditado. Verifique sua conexão com a internet.';
+    } else if (event.error === 'service-not-allowed') {
+      errorMessage = 'Serviço de reconhecimento de voz não permitido. Verifique as configurações do navegador.';
+    } else if (event.error === 'bad-grammar') {
+      errorMessage = 'Erro na gramática do reconhecimento de voz.';
+    } else if (event.error === 'language-not-supported') {
+      errorMessage = 'Idioma português não suportado para ditado neste navegador.';
+    }
+    
+    setStatus(errorMessage, true);
   };
   recognition.onend = () => {
     dictating = false;
@@ -161,10 +194,17 @@ const startDictation = () => {
       speechButton.textContent = '🗣️ Ditado';
     }
   };
-  recognition.start();
-  dictating = true;
-  if (speechButton) {
-    speechButton.textContent = '🛑 Parar ditado';
+  
+  try {
+    recognition.start();
+    dictating = true;
+    if (speechButton) {
+      speechButton.textContent = '🛑 Parar ditado';
+    }
+    setStatus('Ditando... Fale agora.');
+  } catch (error) {
+    console.error('Erro ao iniciar ditado:', error);
+    setStatus('Erro ao iniciar ditado. Tente novamente.', true);
   }
 };
 
@@ -237,6 +277,10 @@ if (form) {
       stopRecording();
     }
     setStatus('Enviando mensagem...');
+    
+    // Limpar pré-visualizações
+    clearImagePreview();
+    clearAudioPreview();
   });
 }
 

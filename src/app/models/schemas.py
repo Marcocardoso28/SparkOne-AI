@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -34,7 +34,7 @@ class ChannelMessage(BaseModel):
     sender: str = Field(..., description="Identifier of the message originator")
     content: str = Field(..., description="Plain text message content")
     message_type: MessageType = MessageType.FREE_TEXT
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     extra_data: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -42,7 +42,7 @@ class HealthStatus(BaseModel):
     """Response model for health checks."""
 
     status: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 __all__ = ["Channel", "ChannelMessage", "HealthStatus", "MessageType"]

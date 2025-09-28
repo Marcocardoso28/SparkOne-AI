@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+import logging
+from collections.abc import Sequence
 
 from pydantic import BaseModel
 
-from ..config import get_settings
-from ..core.metrics import WHATSAPP_NOTIFICATION_COUNTER, FALLBACK_NOTIFICATION_COUNTER
-from ..services.whatsapp import WhatsAppService
-from ..dependencies import get_whatsapp_service
-import logging
+from app.config import get_settings
+from app.core.metrics import FALLBACK_NOTIFICATION_COUNTER, WHATSAPP_NOTIFICATION_COUNTER
+from app.dependencies import get_whatsapp_service
 
 
 class Alert(BaseModel):
@@ -51,7 +50,9 @@ async def _fallback_notification(payload: AlertPayload) -> None:
     if not settings.fallback_email:
         return
     FALLBACK_NOTIFICATION_COUNTER.labels(status="sent").inc()
-    logging.getLogger(__name__).info("fallback_alert", email=settings.fallback_email, alerts=len(payload.alerts))
+    logging.getLogger(__name__).info(
+        "fallback_alert", email=settings.fallback_email, alerts=len(payload.alerts)
+    )
 
 
 def _format_alert(alert: Alert) -> str:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from src.app.workers.scheduler import _notify_whatsapp
-from src.app.core.metrics import WHATSAPP_NOTIFICATION_COUNTER, FALLBACK_NOTIFICATION_COUNTER
-from src.app.config import Settings
+from app.config import Settings
+from app.core.metrics import FALLBACK_NOTIFICATION_COUNTER, WHATSAPP_NOTIFICATION_COUNTER
+from app.workers.scheduler import _notify_whatsapp
 
 
 class DummyService:

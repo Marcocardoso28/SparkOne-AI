@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ..models.schemas import Channel, ChannelMessage, MessageType
+from app.models.schemas import Channel, ChannelMessage, MessageType
 
 
 class GoogleSheetsPayload(BaseModel):
     row: list[str]
     sheet_id: str
     user: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     row_index: int | None = None
 
 

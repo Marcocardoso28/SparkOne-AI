@@ -5,10 +5,10 @@ import pytest_asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.app.knowledge.ingestion import DocumentIngestionService
-from src.app.knowledge.retriever import SemanticRetriever
-from src.app.models.db.base import Base
-from src.app.models.db.knowledge import KnowledgeDocumentORM, KnowledgeChunkORM
+from app.knowledge.ingestion import DocumentIngestionService
+from app.knowledge.retriever import SemanticRetriever
+from app.models.db.base import Base
+from app.models.db.knowledge import KnowledgeChunkORM, KnowledgeDocumentORM
 
 
 class FakeEmbeddingProvider:

@@ -1,9 +1,9 @@
 """Channel adapter exports."""
 
 from .base import ChannelAdapter, ChannelNotRegisteredError, MessageNormalizer
-from .whatsapp import WhatsAppAdapter
 from .google_sheets import GoogleSheetsAdapter
 from .web_ui import WebUIAdapter
+from .whatsapp import WhatsAppAdapter
 
 __all__ = [
     "ChannelAdapter",

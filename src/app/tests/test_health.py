@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.app.main import create_application
-from src.app.config import get_settings
+from app.config import get_settings
+from app.main import create_application
 
 
 def test_healthcheck_returns_ok() -> None:
@@ -20,10 +20,11 @@ def test_healthcheck_returns_ok() -> None:
 
 def test_database_health_returns_ok() -> None:
     # Cria uma sessão de teste em memória
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-    from src.app.models.db.base import Base
-    from src.app.core.database import get_db_session
-    
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.core.database import get_db_session
+    from app.models.db.base import Base
+
     async def create_test_session():
         engine = create_async_engine("sqlite+aiosqlite:///:memory:")
         async with engine.begin() as conn:
@@ -32,7 +33,7 @@ def test_database_health_returns_ok() -> None:
         async with factory() as session:
             yield session
         await engine.dispose()
-    
+
     app = create_application()
     app.dependency_overrides[get_db_session] = create_test_session
     client = TestClient(app)
@@ -41,7 +42,7 @@ def test_database_health_returns_ok() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
-    
+
     # Limpa os overrides
     app.dependency_overrides.clear()
 
