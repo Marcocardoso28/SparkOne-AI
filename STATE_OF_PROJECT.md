@@ -34,6 +34,7 @@
 - Estrutura normalizada? ⚠️ — refatoração de pacotes pendente.
 - Linting/Typing atualizados? ⚠️ — configs propostos precisam ser adotados e validados.
 - Testes? ⚠️ — suite smoke adicionada, expandir cobertura.
+- Pipeline de testes agora falha abaixo de 60% de cobertura (`pytest --cov-fail-under`).
 - Observabilidade? ❌ — novos dashboards/alertas ainda a executar.
 - Segurança? ⚠️ — baseline atualizado em `SECURITY.md`, aplicar roadmap.
 - CI/CD? ⚠️ — workflow reforçado precisa ser ativado.

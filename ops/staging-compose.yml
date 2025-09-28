@@ -1,6 +1,24 @@
 version: "3.9"
 
 services:
+  reverse-proxy:
+    image: traefik:v3.0
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik-acme:/etc/traefik/acme.json
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - edge
+
   api:
     image: ghcr.io/macspark/sparkone:latest
     env_file: ../.env
@@ -13,6 +31,9 @@ services:
       - db
       - cache
     restart: unless-stopped
+    networks:
+      - default
+      - edge
 
   db:
     image: postgres:15
@@ -27,6 +48,65 @@ services:
   cache:
     image: redis:7-alpine
     restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    command:
+      - --docker_only=true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+    networks:
+      - edge
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    command:
+      - --path.rootfs=/host
+    pid: "host"
+    volumes:
+      - /:/host:ro
+    restart: unless-stopped
+    networks:
+      - edge
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --config.expand-env=true
+    environment:
+      - SLACK_ALERT_WEBHOOK=${SLACK_ALERT_WEBHOOK:-}
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+    networks:
+      - edge
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+      - cadvisor
+      - node-exporter
+      - alertmanager
+      - reverse-proxy
+    restart: unless-stopped
+    networks:
+      - edge
 
   pgbackups:
     image: prodrigestivill/postgres-backup-local
@@ -47,3 +127,8 @@ services:
 volumes:
   staging-pgdata:
   staging-backups:
+  traefik-acme:
+
+networks:
+  edge:
+    driver: bridge

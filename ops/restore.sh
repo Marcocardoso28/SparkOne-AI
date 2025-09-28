@@ -13,5 +13,10 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 1
 fi
 
-docker compose exec -T db psql -U sparkone sparkone <"$BACKUP_FILE"
-echo "Restore concluído a partir de $BACKUP_FILE"
+COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.yml}
+DB_SERVICE=${DB_SERVICE:-db}
+DB_USER=${DB_USER:-sparkone}
+DB_NAME=${DB_NAME:-sparkone}
+
+docker compose -f "$COMPOSE_FILE" exec -T "$DB_SERVICE" psql -U "$DB_USER" "$DB_NAME" <"$BACKUP_FILE"
+echo "Restore concluído a partir de $BACKUP_FILE" >&2

@@ -18,7 +18,15 @@
       "Bash(python:*)",
       "Bash(PYTHONPATH=. python -m pytest --cov=src --cov-report=term-missing)",
       "Bash(tree:*)",
-      "Bash(PYTHONPATH=. python -m pytest --collect-only -q)"
+      "Bash(PYTHONPATH=. python -m pytest --collect-only -q)",
+      "Bash(docker:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Read(//c/Users/marco/AppData/Roaming/Claude/**)",
+      "Bash(pip-audit:*)",
+      "Bash(pip show:*)",
+      "WebSearch",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

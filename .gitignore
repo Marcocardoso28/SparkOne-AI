@@ -13,6 +13,12 @@ venv/
 ENV/
 env/
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Database
 *.sqlite
 *.sqlite3
@@ -59,7 +65,35 @@ Thumbs.db
 *.der
 *.jks
 *.keystore
+ops/traefik/acme.json
 
 # Auditoria / artefatos locais
 *.cache.json
 audit_cache.json
+
+# Arquivos de teste e debug temporários
+check_*.py
+create_*.py
+fix_*.py
+test_*.py
+debug_*.py
+*_test.py
+*_debug.py
+
+# Arquivos de cobertura e relatórios
+coverage.xml
+*.coverage
+htmlcov/
+
+# Arquivos SQLite temporários
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Cache do MyPy
+.mypy_cache/
+
+# Arquivos temporários do sistema
+nul
+*.bak
+*.backup

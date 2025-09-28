@@ -1,0 +1,41 @@
+http:
+  middlewares:
+    sparkone-security-headers:
+      headers:
+        sslRedirect: true
+        forceSTSHeader: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+    sparkone-rate-limit:
+      rateLimit:
+        average: 200
+        burst: 100
+        period: 1s
+
+  routers:
+    sparkone-api:
+      rule: "Host(`api.sparkone.com`) || Host(`sparkone.macspark.dev`)"
+      entryPoints:
+        - websecure
+      service: sparkone-api
+      middlewares:
+        - sparkone-security-headers
+        - sparkone-rate-limit
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "sparkone.com"
+            sans:
+              - "*.sparkone.com"
+
+  services:
+    sparkone-api:
+      loadBalancer:
+        servers:
+          - url: "http://api:8000"
+        passHostHeader: true

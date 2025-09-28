@@ -45,7 +45,7 @@ jobs:
       - name: Unit tests (pytest)
         env:
           PYTHONPATH: src
-        run: python -m pytest --cov=src --cov-report=xml
+        run: python -m pytest
 
       - name: Upload coverage to Codecov (optional)
         if: ${{ secrets.CODECOV_TOKEN != '' }}
