@@ -33,7 +33,7 @@
         <div class="toast toast--error" role="alert">{{ error }}</div>
         {% endif %}
 
-        <form id="message-form" class="composer" method="post" action="/web" enctype="multipart/form-data">
+        <form id="message-form" class="composer" method="post" action="/web/ingest" enctype="multipart/form-data">
           <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token }}" />
           <label class="composer__label" for="message-input">Mensagem</label>
           <textarea

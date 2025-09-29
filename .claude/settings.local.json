@@ -28,7 +28,8 @@
       "WebSearch",
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(del \"C:\\Users\\marco\\Macspark\\SparkOne\\test_message_flow.py\")"
+      "Bash(del \"C:\\Users\\marco\\Macspark\\SparkOne\\test_message_flow.py\")",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
