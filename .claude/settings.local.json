@@ -29,7 +29,9 @@
       "Bash(cat:*)",
       "Bash(curl:*)",
       "Bash(del \"C:\\Users\\marco\\Macspark\\SparkOne\\test_message_flow.py\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Corrige upload de imagens e otimiza sistema de resposta\n\n- Corrige endpoint do formulário para /web/ingest (upload de imagens funcionando)\n- Implementa router inteligente de modelos LLM para melhor performance  \n- Adiciona sistema de cache para respostas mais rápidas\n- Melhora prompts para maior inteligência nas respostas\n- Otimiza pipeline de processamento (embeddings assíncronos)\n- Corrige configurações OpenAI (modelo gpt-4o-mini)\n- Implementa seleção automática entre modelos rápidos e inteligentes\n- Adiciona fallback automático entre OpenAI e Ollama\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

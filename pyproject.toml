@@ -39,7 +39,11 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.46b0,<1",
     "opentelemetry-instrumentation-httpx>=0.46b0,<1",
     "opentelemetry-instrumentation-asyncpg>=0.46b0,<1",
-    "opentelemetry-instrumentation-redis>=0.46b0,<1"
+    "opentelemetry-instrumentation-redis>=0.46b0,<1",
+    "pyotp>=2.9,<3",
+    "qrcode[pil]>=7.4,<8",
+    "passlib[bcrypt]>=1.7,<2",
+    "python-jose[cryptography]>=3.3,<4"
 ]
 
 [project.optional-dependencies]

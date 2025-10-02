@@ -23,6 +23,7 @@ from .middleware.security_logging import SecurityLoggingMiddleware
 from .observability import instrument_application
 from .routers import (
     alerts,
+    auth,
     brief,
     channels,
     events,
@@ -82,7 +83,8 @@ def create_application() -> FastAPI:
 
     # Configuração CORS segura - não permitir * com credenciais em produção
     if settings.environment == "production" and cors_origins == ["*"]:
-        cors_origins = ["https://sparkone.macspark.dev", "https://app.sparkone.com"]
+        cors_origins = ["https://sparkone.macspark.dev",
+                        "https://app.sparkone.com"]
 
     app.add_middleware(
         CORSMiddleware,
@@ -99,7 +101,8 @@ def create_application() -> FastAPI:
     if settings.environment == "development":
         # Limites mais permissivos para desenvolvimento
         endpoint_limits = {
-            "/web/login": {"requests": 50, "window": 300},  # 50 tentativas por 5 min
+            # 50 tentativas por 5 min
+            "/web/login": {"requests": 50, "window": 300},
             "/web/logout": {"requests": 100, "window": 300},  # 100 por 5 min
             "/ingest": {"requests": 500, "window": 3600},  # 500 por hora
             "/channels/": {"requests": 300, "window": 3600},  # 300 por hora
@@ -112,7 +115,8 @@ def create_application() -> FastAPI:
     else:
         # Limites mais restritivos para produção
         endpoint_limits = {
-            "/web/login": {"requests": 5, "window": 900},  # 5 tentativas por 15 min
+            # 5 tentativas por 15 min
+            "/web/login": {"requests": 5, "window": 900},
             "/web/logout": {"requests": 10, "window": 300},  # 10 por 5 min
             "/ingest": {"requests": 50, "window": 3600},  # 50 por hora
             "/channels/": {"requests": 30, "window": 3600},  # 30 por hora
@@ -144,6 +148,7 @@ def create_application() -> FastAPI:
         hsts_preload=settings.security_hsts_preload,
     )
     app.include_router(health.router)
+    app.include_router(auth.router)
     app.include_router(ingest.router)
     app.include_router(channels.router)
     app.include_router(web.router)

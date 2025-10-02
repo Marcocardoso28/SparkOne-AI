@@ -7,6 +7,7 @@ from .memory import ConversationMessage, ConversationRole
 from .message import ChannelMessageORM
 from .sheets import SheetsSyncStateORM
 from .tasks import TaskRecord, TaskStatus
+from .user import User
 from .vector import EMBEDDING_TYPE, MessageEmbeddingORM
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "EventStatus",
     "ConversationMessage",
     "ConversationRole",
+    "User",
     "EMBEDDING_TYPE",
 ]

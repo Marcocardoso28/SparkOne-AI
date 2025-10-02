@@ -12,7 +12,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Runtime configuration resolved from environment variables."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     environment: Literal["development", "production", "test"] = "development"
     debug: bool = True
@@ -29,7 +30,8 @@ class Settings(BaseSettings):
     local_llm_api_key: str | None = None
     local_llm_model: str = "llama-3.1-8b-instruct"
     local_llm_fast_model: str = "gemma3:4b"  # Modelo rápido para tarefas simples
-    local_llm_smart_model: str = "llama3.1:8b"  # Modelo inteligente para tarefas complexas
+    # Modelo inteligente para tarefas complexas
+    local_llm_smart_model: str = "llama3.1:8b"
     llm_request_timeout: float = 15.0
     llm_max_retries: int = 2
 
@@ -91,6 +93,22 @@ class Settings(BaseSettings):
     whatsapp_send_max_retries: int = 3
     ingestion_max_content_length: int = 6000
 
+    # 2FA Settings
+    totp_issuer: str = "SparkOne"
+    totp_algorithm: str = "SHA1"
+    totp_digits: int = 6
+    totp_period: int = 30
+
+    # Rate Limiting
+    rate_limit_enabled: bool = True
+    rate_limit_default_requests: int = 100
+    rate_limit_default_window: int = 3600
+
+    # Backup Settings
+    backup_enabled: bool = True
+    backup_schedule: str = "0 2 * * *"
+    backup_retention_days: int = 30
+
     @field_validator(
         "openai_base_url",
         "local_llm_url",
@@ -102,7 +120,8 @@ class Settings(BaseSettings):
         mode="before",
     )
     @classmethod
-    def _sanitize_optional_urls(cls, value: str | AnyHttpUrl | None):  # type: ignore[override]
+    # type: ignore[override]
+    def _sanitize_optional_urls(cls, value: str | AnyHttpUrl | None):
         if isinstance(value, str) and value.strip() == "":
             return None
         return value

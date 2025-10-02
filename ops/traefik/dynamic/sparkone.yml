@@ -19,7 +19,7 @@ http:
 
   routers:
     sparkone-api:
-      rule: "Host(`api.sparkone.com`) || Host(`sparkone.macspark.dev`)"
+      rule: "Host(`yourdomain.com`) || Host(`www.yourdomain.com`)"
       entryPoints:
         - websecure
       service: sparkone-api
@@ -28,10 +28,6 @@ http:
         - sparkone-rate-limit
       tls:
         certResolver: letsencrypt
-        domains:
-          - main: "sparkone.com"
-            sans:
-              - "*.sparkone.com"
 
   services:
     sparkone-api:

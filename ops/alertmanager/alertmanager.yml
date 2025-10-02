@@ -12,32 +12,43 @@ route:
 
 receivers:
   - name: "default"
-    slack_configs:
-      - api_url: ${SLACK_ALERT_WEBHOOK}
-        channel: "#sparkone-alerts"
-        icon_emoji: ":rotating_light:"
-        username: "SparkOne Alertmanager"
-        send_resolved: true
-        title: "{{ .CommonAnnotations.summary }}"
-        text: >-
-          *Descrição:* {{ .CommonAnnotations.description }}
-          *Severidade:* {{ .CommonLabels.severity }}
-          *Serviço:* {{ .CommonLabels.service }}
+    email_configs:
+      - to: "admin@yourdomain.com"
+        from: "alerts@yourdomain.com"
+        smarthost: "smtp.gmail.com:587"
+        auth_username: "your_email@gmail.com"
+        auth_password: "your_app_password"
+        headers:
+          Subject: "SparkOne Alert: {{ .CommonAnnotations.summary }}"
+        html: |
+          <h2>Alerta SparkOne</h2>
+          <p><strong>Descrição:</strong> {{ .CommonAnnotations.description }}</p>
+          <p><strong>Severidade:</strong> {{ .CommonLabels.severity }}</p>
+          <p><strong>Serviço:</strong> {{ .CommonLabels.service }}</p>
+          <ul>
           {{- range .Alerts }}
-          • *Início:* {{ .StartsAt }} — *Labels:* {{ .Labels }}
+          <li><strong>Início:</strong> {{ .StartsAt }} — <strong>Labels:</strong> {{ .Labels }}</li>
           {{- end }}
+          </ul>
   - name: "critical"
-    slack_configs:
-      - api_url: ${SLACK_ALERT_WEBHOOK}
-        channel: "#sparkone-critical"
-        icon_emoji: ":fire:"
-        username: "SparkOne Critical Alerts"
-        send_resolved: true
-        title: "CRÍTICO: {{ .CommonAnnotations.summary }}"
-        text: >-
+    email_configs:
+      - to: "admin@yourdomain.com"
+        from: "critical-alerts@yourdomain.com"
+        smarthost: "smtp.gmail.com:587"
+        auth_username: "your_email@gmail.com"
+        auth_password: "your_app_password"
+        headers:
+          Subject: "CRÍTICO SparkOne: {{ .CommonAnnotations.summary }}"
+        html: |
+          <h2 style="color: red;">ALERTA CRÍTICO - SparkOne</h2>
+          <p><strong>Descrição:</strong> {{ .CommonAnnotations.description }}</p>
+          <p><strong>Severidade:</strong> {{ .CommonLabels.severity }}</p>
+          <p><strong>Serviço:</strong> {{ .CommonLabels.service }}</p>
+          <ul>
           {{ range .Alerts }}
-          • *{{ .Labels.instance }}* — {{ .Annotations.description }}
+          <li><strong>{{ .Labels.instance }}</strong> — {{ .Annotations.description }}</li>
           {{ end }}
+          </ul>
 
 inhibit_rules:
   - source_matchers:

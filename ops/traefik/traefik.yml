@@ -37,10 +37,9 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: ops@sparkone.com
-      storage: /etc/traefik/acme.json
-      httpChallenge:
-        entryPoint: web
+      email: admin@yourdomain.com
+      storage: /letsencrypt/acme.json
+      tlsChallenge: {}
 
 serversTransport:
   insecureSkipVerify: false

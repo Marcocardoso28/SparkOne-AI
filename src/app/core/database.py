@@ -24,14 +24,14 @@ def get_engine() -> AsyncEngine:
     global _engine
     if _engine is None:
         settings = get_settings()
-        
+
         # Configurações específicas para SQLite para evitar database locks
         engine_kwargs = {
             "echo": settings.debug,
             "future": True,
         }
-        
-        # Se for SQLite, aplicar configurações específicas
+
+        # Configurações específicas por tipo de banco
         if "sqlite" in settings.database_url:
             engine_kwargs.update({
                 "poolclass": StaticPool,
@@ -42,13 +42,24 @@ def get_engine() -> AsyncEngine:
                     "timeout": 30,  # Timeout de 30 segundos para evitar locks
                 },
             })
-        
+        elif "postgresql" in settings.database_url:
+            # Configurações para PostgreSQL
+            engine_kwargs.update({
+                "pool_pre_ping": True,
+                "pool_recycle": 3600,  # 1 hora
+                "pool_size": 10,
+                "max_overflow": 20,
+                "connect_args": {
+                    "command_timeout": 30,
+                },
+            })
+
         _engine = create_async_engine(settings.database_url, **engine_kwargs)
-        
+
         # Para SQLite, configurar WAL mode para melhor concorrência
         if "sqlite" in settings.database_url:
             from sqlalchemy import event, text
-            
+
             @event.listens_for(_engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
                 """Configura pragmas do SQLite para melhor performance e concorrência."""
@@ -64,7 +75,7 @@ def get_engine() -> AsyncEngine:
                 # Temp store em memória
                 cursor.execute("PRAGMA temp_store=MEMORY")
                 cursor.close()
-    
+
     return _engine
 
 
@@ -74,7 +85,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     global _session_factory
     if _session_factory is None:
         _session_factory = async_sessionmaker(
-            get_engine(), 
+            get_engine(),
             expire_on_commit=False,
             autoflush=True,
             autocommit=False,
