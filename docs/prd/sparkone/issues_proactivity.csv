@@ -1,0 +1,39 @@
+ID,Description,TraceID,ADR,Priority,Sprint,Estimated_Hours,Dependencies,Acceptance_Criteria,Component,Status
+EXEC-001,Criar estrutura do Worker Container,INFRA-001,ADR-008,P0,Sprint1,8,,Worker container inicializa sem erros e conecta ao PostgreSQL/Redis,Worker,Not Started
+EXEC-002,Configurar APScheduler no Worker,INFRA-002,ADR-007,P0,Sprint1,6,EXEC-001,APScheduler executa jobs agendados e persiste resultados no PostgreSQL,Worker,Not Started
+EXEC-003,Implementar ProactivityEngine Service,RF-015,ADR-009,P0,Sprint1,8,EXEC-001;EXEC-002,ProactivityEngine inicializa todos os monitores e configura schedules padrão,Core,Not Started
+EXEC-004,Implementar NotificationManager,INT-001,ADR-010,P0,Sprint1,10,EXEC-003,NotificationManager envia mensagens via WhatsApp respeitando rate limiting,Core,Not Started
+EXEC-005,Testes de Integração Sprint 1,TEST-001,,P0,Sprint1,4,EXEC-004,Todos os componentes do Sprint 1 passam nos testes de integração,Testing,Not Started
+EXEC-006,Implementar Daily Brief Job,RF-015.1,ADR-009,P0,Sprint2,8,EXEC-005,Brief diário é gerado e enviado automaticamente às 08:00 via WhatsApp,Jobs,Not Started
+EXEC-007,Implementar TaskMonitor,RF-015.2,ADR-009,P0,Sprint2,8,EXEC-006,Lembretes de tarefas são enviados 2h antes do deadline sem duplicação,Monitoring,Not Started
+EXEC-008,Implementar EventMonitor,RF-015.3,ADR-009,P0,Sprint2,8,EXEC-007,Notificações de eventos são enviadas 30min antes com detalhes de localização,Monitoring,Not Started
+EXEC-009,Testes End-to-End,TEST-002,,P0,Sprint2,6,EXEC-008,Fluxo completo de notificação proativa funciona de ponta a ponta,Testing,Not Started
+EXEC-010,Documentação e Deploy,DOC-001,,P0,Sprint2,2,EXEC-009,Documentação atualizada e sistema deployado com sucesso,Documentation,Not Started
+INFRA-001,Setup Docker Worker Service,INFRA-001,ADR-008,P0,Sprint1,4,,Docker Compose inclui serviço worker funcional,Infrastructure,Not Started
+INFRA-002,Configurar Variáveis de Ambiente Worker,INFRA-002,,P0,Sprint1,2,INFRA-001,Todas as variáveis de ambiente necessárias estão configuradas,Infrastructure,Not Started
+INFRA-003,Setup Redis Job Queue,INFRA-003,,P0,Sprint1,3,EXEC-001,Redis configurado para job queue com persistência,Infrastructure,Not Started
+DB-001,Criar Model JobExecution,DB-001,,P0,Sprint1,3,EXEC-001,Model JobExecution criado com migrations aplicadas,Database,Not Started
+DB-002,Criar Model NotificationLog,DB-002,,P0,Sprint1,3,EXEC-004,Model NotificationLog criado para histórico de notificações,Database,Not Started
+API-001,Endpoint Status ProactivityEngine,API-001,,P1,Sprint2,2,EXEC-003,Endpoint GET /proactivity/status retorna estado do engine,API,Not Started
+API-002,Endpoint Configuração Usuário,API-002,,P1,Sprint2,4,EXEC-003,Endpoint para usuário configurar horários e frequência de notificações,API,Not Started
+TEST-001,Testes Unitários ProactivityEngine,TEST-001,,P0,Sprint1,6,EXEC-003,Cobertura de testes > 80% para ProactivityEngine,Testing,Not Started
+TEST-002,Testes Unitários NotificationManager,TEST-002,,P0,Sprint1,4,EXEC-004,Cobertura de testes > 80% para NotificationManager,Testing,Not Started
+TEST-003,Testes Unitários Worker Jobs,TEST-003,,P0,Sprint2,6,EXEC-006;EXEC-007;EXEC-008,Cobertura de testes > 80% para todos os jobs do worker,Testing,Not Started
+TEST-004,Mock Evolution API para Testes,TEST-004,,P0,Sprint1,3,EXEC-004,Mock da Evolution API configurado para testes automatizados,Testing,Not Started
+MONITOR-001,Configurar Métricas Prometheus,MONITOR-001,,P1,Sprint2,4,EXEC-003,Métricas de jobs executados e notificações enviadas disponíveis,Monitoring,Not Started
+MONITOR-002,Configurar Health Checks Worker,MONITOR-002,,P1,Sprint2,2,EXEC-001,Health checks do worker container funcionando,Monitoring,Not Started
+MONITOR-003,Configurar Alertas Críticos,MONITOR-003,,P1,Sprint2,3,MONITOR-001,Alertas configurados para falhas consecutivas e worker down,Monitoring,Not Started
+SEC-001,Rate Limiting Notificações,SEC-001,,P0,Sprint1,3,EXEC-004,Rate limiting de 60 notificações/hora por usuário implementado,Security,Not Started
+SEC-002,Validação Input Jobs,SEC-002,,P0,Sprint2,2,EXEC-006;EXEC-007;EXEC-008,Validação de entrada para todos os jobs implementada,Security,Not Started
+PERF-001,Otimização Query Tarefas Próximas,PERF-001,,P1,Sprint2,4,EXEC-007,Query de tarefas próximas ao deadline otimizada (< 100ms),Performance,Not Started
+PERF-002,Otimização Query Eventos Próximos,PERF-002,,P1,Sprint2,4,EXEC-008,Query de eventos próximos otimizada (< 100ms),Performance,Not Started
+CONFIG-001,Configuração Timezone Dinâmica,CONFIG-001,,P1,Sprint2,3,EXEC-002,Suporte a configuração de timezone por usuário,Configuration,Not Started
+CONFIG-002,Configuração Horários Personalizados,CONFIG-002,,P1,Sprint2,4,EXEC-006,Usuário pode configurar horário personalizado para brief diário,Configuration,Not Started
+ERROR-001,Tratamento Erro Evolution API,ERROR-001,,P0,Sprint1,3,EXEC-004,Retry logic e fallback implementados para falhas da Evolution API,Error Handling,Not Started
+ERROR-002,Tratamento Erro Database,ERROR-002,,P0,Sprint1,2,EXEC-001,Tratamento de erros de conexão com PostgreSQL e Redis,Error Handling,Not Started
+ERROR-003,Recovery Jobs Falhados,ERROR-003,,P1,Sprint2,4,EXEC-002,Mecanismo de recovery para jobs que falharam implementado,Error Handling,Not Started
+LOG-001,Logging Estruturado Jobs,LOG-001,,P0,Sprint1,2,EXEC-001,Todos os jobs geram logs estruturados com correlation ID,Logging,Not Started
+LOG-002,Logging Notificações,LOG-002,,P0,Sprint1,2,EXEC-004,Todas as notificações são logadas com status de entrega,Logging,Not Started
+DEPLOY-001,Dockerfile Worker,DEPLOY-001,,P0,Sprint1,3,EXEC-001,Dockerfile otimizado para worker container,Deployment,Not Started
+DEPLOY-002,Docker Compose Update,DEPLOY-002,,P0,Sprint1,2,DEPLOY-001,Docker Compose atualizado com serviço worker,Deployment,Not Started
+DEPLOY-003,Environment Variables Documentation,DEPLOY-003,,P0,Sprint2,1,EXEC-010,Documentação completa das variáveis de ambiente necessárias,Deployment,Not Started
