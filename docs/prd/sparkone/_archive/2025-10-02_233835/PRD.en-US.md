@@ -39,7 +39,7 @@ migration: Alembic 1.13+
 primary_db: PostgreSQL 15+ with pgvector extension
 cache: Redis 7
 local_dev: SQLite (fallback)
-vector_search: pgvector for embeddings (infra ready; feature pending RF-018, P1; see ADR-003, ADR-013, ADR-013, backlog RF-006)
+vector_search: pgvector for embeddings (infra ready; feature pending RF-018, P1; see ADR-003, backlog RF-006)
 ```
 
 #### External Integrations
@@ -226,8 +226,6 @@ CALENDAR_PROVIDER: Literal["google", "caldav", "none"] = "google"
 - APScheduler integration for automated reminders
 - Proactive notification system
 - Context-aware suggestion engine
-    References: ADR-012
-    References: ADR-012
 
 ### FR-008: Recommendation Service
 **Status:** ❌ NOT IMPLEMENTED  

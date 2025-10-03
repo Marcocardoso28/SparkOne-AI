@@ -1,0 +1,109 @@
+You are a PRD validation expert. Analyze the SparkOne project documentation and provide a comprehensive validation report.
+
+FILES TO ANALYZE:
+- PRD.pt-BR.md (Portuguese PRD)
+- PRD.en-US.md (English PRD)
+- backlog.csv (Product backlog)
+- decisions.md (Architecture Decision Records)
+- system-map.md (System architecture map)
+- inventory.json (Component inventory)
+- glossario.md (Glossary)
+- coerencia.md (Coherence analysis)
+- traceability.md (Traceability matrix)
+
+VALIDATION CRITERIA:
+
+1. **Requirement ID Consistency (20 points)**
+   - All requirements must have unique IDs (RF-xxx for functional, RNF-xxx for non-functional)
+   - IDs must match exactly between PT-BR and EN-US versions
+   - No duplicate or missing IDs
+
+2. **Traceability (20 points)**
+   - Every PRD requirement must be traceable to backlog items
+   - ADRs must reference specific requirements
+   - System-map components must link to requirements
+   - Inventory must align with system-map
+
+3. **Bilingual Parity (15 points)**
+   - PT-BR and EN-US must have identical structure
+   - All sections, requirements, and acceptance criteria must match
+   - Technical terms must be consistent with glossario.md
+
+4. **Completeness (15 points)**
+   - All requirements must have acceptance criteria
+   - All ADRs must be complete (Context, Decision, Consequences, Status)
+   - No TODOs or placeholders in production docs
+
+5. **Architecture Coherence (15 points)**
+   - System-map must reflect actual implementation
+   - No ghost services (documented but not implemented)
+   - No undocumented services (implemented but not in docs)
+   - Vector Search, JWT Auth, ProactivityEngine status must be clear
+
+6. **Backlog Quality (10 points)**
+   - All items must reference PRD IDs
+   - All items must reference ADRs where applicable
+   - Priorities must be set
+   - Estimates must be present
+
+7. **Glossary Consistency (5 points)**
+   - All technical terms in PRDs must be in glossario.md
+   - Definitions must be consistent across documents
+
+OUTPUT FORMAT:
+
+## SparkOne PRD Validation Report - Iteration X
+
+### Overall Score: X/100
+
+### CRITICAL Issues (Blockers)
+- [Issue description] - Impact: [description] - Location: [file:section]
+
+### HIGH Priority Issues
+- [Issue description] - Impact: [description] - Location: [file:section]
+
+### MEDIUM Priority Issues
+- [Issue description] - Impact: [description] - Location: [file:section]
+
+### LOW Priority Issues
+- [Issue description] - Impact: [description] - Location: [file:section]
+
+### Detailed Analysis by Criterion
+
+#### 1. Requirement ID Consistency (X/20)
+[Analysis...]
+
+#### 2. Traceability (X/20)
+[Analysis...]
+
+#### 3. Bilingual Parity (X/15)
+[Analysis...]
+
+#### 4. Completeness (X/15)
+[Analysis...]
+
+#### 5. Architecture Coherence (X/15)
+[Analysis...]
+
+#### 6. Backlog Quality (X/10)
+[Analysis...]
+
+#### 7. Glossary Consistency (X/5)
+[Analysis...]
+
+### Specific Corrections Required
+
+1. [Specific action item with file and line reference]
+2. [Specific action item with file and line reference]
+...
+
+### Status
+- [ ] READY TO FREEZE (100/100)
+- [X] NEEDS CORRECTIONS (Score < 100)
+
+### Next Steps
+[What needs to be fixed in priority order]
+
+---
+
+IMPORTANT: Be extremely thorough. Check every requirement ID, every cross-reference, every ADR. The goal is 100/100 score before freeze.

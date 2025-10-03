@@ -24,10 +24,10 @@ Note: UNASSIGNED indicates no definitive mapping available in the current docs/c
 | RF-012 Brief text | TECH-003 | ADR-001 | GET /brief/text | src/app/routers/brief.py | tests/test_brief.py |
 | RF-013 Message classification | RF-002 | ADR-002 | (internal) | src/app/agents/agno.py | tests/test_agno.py |
 | RF-014 Intelligent routing | RF-002 | ADR-002 | (internal) | src/app/agents/agno.py | tests/test_agno.py |
-| RF-015 ProactivityEngine (P0) | RF-001, RF-003 | ADR-002; ADR-012 | /proactivity/* (planned) | src/app/services/proactivity.py (planned) | tests/test_proactivity.py (planned) |
+| RF-015 ProactivityEngine (P0) | RF-001, RF-003 | ADR-002 | /proactivity/* (planned) | src/app/services/proactivity.py (planned) | tests/test_proactivity.py (planned) |
 | RF-016 Recommendation (Places) (P1) | RF-004 | ADR-004 | /recommendations (planned) | src/app/services/recommendations.py (planned) | tests/test_recommendations.py (planned) |
 | RF-017 Eventbrite (P2) | RF-005 | ADR-004 | /recommendations/events (planned) | src/app/services/recommendations.py (planned) | tests/test_recommendations.py (planned) |
-| RF-018 Vector Search (P1) | RF-006 | ADR-003; ADR-013 | /search (planned) | src/app/services/vector_search.py (planned) | tests/test_vector_search.py (planned) |
+| RF-018 Vector Search (P1) | RF-006 | ADR-003 | /search (planned) | src/app/services/vector_search.py (planned) | tests/test_vector_search.py (planned) |
 
 ## Non-Functional (RNF)
 

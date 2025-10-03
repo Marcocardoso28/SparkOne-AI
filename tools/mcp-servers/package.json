@@ -1,0 +1,17 @@
+{
+  "name": "qwen-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server para integração com Qwen CLI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "keywords": ["mcp", "qwen", "ai", "claude"],
+  "author": "marcocardoso",
+  "license": "MIT"
+}

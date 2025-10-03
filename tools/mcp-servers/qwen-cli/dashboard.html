@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen MCP Server - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 15px;
+            border: 1px solid #333;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #00d4ff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-healthy { background: #4caf50; }
+        .status-warning { background: #ff9800; }
+        .status-critical { background: #f44336; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #ff6b6b);
+            transition: width 0.3s ease;
+        }
+
+        .chart-container {
+            height: 200px;
+            margin: 15px 0;
+            background: #111;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(45deg, #0099cc, #00d4ff);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ff5252);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(45deg, #ff5252, #ff6b6b);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .table th {
+            background: #1e1e1e;
+            font-weight: 600;
+            color: #00d4ff;
+        }
+
+        .table tr:hover {
+            background: #1a1a1a;
+        }
+
+        .logs {
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .log-info { color: #58a6ff; }
+        .log-warn { color: #f85149; }
+        .log-error { color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+
+        .tabs {
+            display: flex;
+            background: #1e1e1e;
+            border-radius: 10px 10px 0 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+        }
+
+        .tab-content {
+            background: #1a1a1a;
+            padding: 25px;
+            border-radius: 0 0 10px 10px;
+            border: 1px solid #333;
+            border-top: none;
+        }
+
+        .icon {
+            font-size: 1.5rem;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.3);
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1) rotate(180deg);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+
+        .alert-warning {
+            background: rgba(255, 145, 0, 0.1);
+            border-color: #ff9100;
+            color: #ff9100;
+        }
+
+        .alert-error {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .header-content { flex-direction: column; gap: 15px; }
+            .logo h1 { font-size: 2rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <span class="icon">🤖</span>
+                    <h1>Qwen MCP Server</h1>
+                </div>
+                <div class="status-badge status-healthy" id="serverStatus">
+                    🟢 Saudável
+                </div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- System Overview -->
+            <div class="card">
+                <h3><span class="icon">📊</span> Visão Geral</h3>
+                <div class="metric">
+                    <span>Status do Servidor</span>
+                    <span class="metric-value" id="overallStatus">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Uptime</span>
+                    <span class="metric-value" id="uptime">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Requests Totais</span>
+                    <span class="metric-value" id="totalRequests">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Taxa de Erro</span>
+                    <span class="metric-value" id="errorRate">Carregando...</span>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="card">
+                <h3><span class="icon">⚡</span> Performance</h3>
+                <div class="metric">
+                    <span>Uso de CPU</span>
+                    <span class="metric-value" id="cpuUsage">Carregando...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpuProgress" style="width: 0%"></div>
+                </div>
+                <div class="metric">
+                    <span>Uso de Memória</span>
+                    <span class="metric-value" id="memoryUsage">Carregando...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="memoryProgress" style="width: 0%"></div>
+                </div>
+                <div class="metric">
+                    <span>Tempo de Resposta Médio</span>
+                    <span class="metric-value" id="avgResponseTime">Carregando...</span>
+                </div>
+            </div>
+
+            <!-- Cache Statistics -->
+            <div class="card">
+                <h3><span class="icon">🗄️</span> Cache</h3>
+                <div class="metric">
+                    <span>Taxa de Acerto</span>
+                    <span class="metric-value" id="cacheHitRate">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Cache Hits</span>
+                    <span class="metric-value" id="cacheHits">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Cache Misses</span>
+                    <span class="metric-value" id="cacheMisses">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Tamanho do Cache</span>
+                    <span class="metric-value" id="cacheSize">Carregando...</span>
+                </div>
+            </div>
+
+            <!-- Authentication Stats -->
+            <div class="card">
+                <h3><span class="icon">🔐</span> Autenticação</h3>
+                <div class="metric">
+                    <span>Usuários Ativos</span>
+                    <span class="metric-value" id="activeUsers">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>API Keys</span>
+                    <span class="metric-value" id="apiKeys">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Rate Limits Atingidos</span>
+                    <span class="metric-value" id="rateLimitHits">Carregando...</span>
+                </div>
+                <div class="metric">
+                    <span>Falhas de Auth</span>
+                    <span class="metric-value" id="authFailures">Carregando...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Sections -->
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('health')">🏥 Health Checks</div>
+                <div class="tab" onclick="showTab('plugins')">🔌 Plugins</div>
+                <div class="tab" onclick="showTab('webhooks')">🪝 Webhooks</div>
+                <div class="tab" onclick="showTab('logs')">📋 Logs</div>
+            </div>
+
+            <div class="tab-content">
+                <!-- Health Checks Tab -->
+                <div id="health-tab" class="tab-panel">
+                    <h4>Status dos Componentes</h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Componente</th>
+                                <th>Status</th>
+                                <th>Última Verificação</th>
+                                <th>Duração</th>
+                            </tr>
+                        </thead>
+                        <tbody id="healthChecks">
+                            <tr>
+                                <td colspan="4" class="loading">Carregando health checks...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Plugins Tab -->
+                <div id="plugins-tab" class="tab-panel" style="display: none;">
+                    <h4>Plugins Instalados</h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Versão</th>
+                                <th>Status</th>
+                                <th>Ferramentas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pluginsList">
+                            <tr>
+                                <td colspan="5" class="loading">Carregando plugins...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Webhooks Tab -->
+                <div id="webhooks-tab" class="tab-panel" style="display: none;">
+                    <h4>Webhooks Configurados</h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>URL</th>
+                                <th>Eventos</th>
+                                <th>Status</th>
+                                <th>Último Disparo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="webhooksList">
+                            <tr>
+                                <td colspan="5" class="loading">Carregando webhooks...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Logs Tab -->
+                <div id="logs-tab" class="tab-panel" style="display: none;">
+                    <h4>Logs Recentes</h4>
+                    <div class="logs" id="logsContainer">
+                        <div class="log-entry loading">Carregando logs...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshData()" title="Atualizar Dados">
+        🔄
+    </button>
+
+    <script>
+        let currentTab = 'health';
+
+        function showTab(tabName) {
+            // Hide all tab panels
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.style.display = 'none';
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab panel
+            document.getElementById(tabName + '-tab').style.display = 'block';
+
+            // Add active class to selected tab
+            event.target.classList.add('active');
+
+            currentTab = tabName;
+        }
+
+        async function loadData() {
+            try {
+                // Load health status
+                const health = await fetch('/health').then(r => r.json());
+                updateHealthStatus(health);
+
+                // Load metrics
+                const metrics = await fetch('/metrics').then(r => r.json());
+                updateMetrics(metrics);
+
+                // Load component data based on current tab
+                if (currentTab === 'health') {
+                    updateHealthChecks(health.components);
+                } else if (currentTab === 'plugins') {
+                    // Load plugins data
+                    // const plugins = await fetch('/api/plugins').then(r => r.json());
+                    // updatePlugins(plugins);
+                } else if (currentTab === 'webhooks') {
+                    // Load webhooks data
+                    // const webhooks = await fetch('/api/webhooks').then(r => r.json());
+                    // updateWebhooks(webhooks);
+                } else if (currentTab === 'logs') {
+                    // Load logs
+                    updateLogs();
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+
+        function updateHealthStatus(health) {
+            const statusBadge = document.getElementById('serverStatus');
+            const overallStatus = document.getElementById('overallStatus');
+
+            let statusText, statusClass;
+            switch (health.overall) {
+                case 'healthy':
+                    statusText = '🟢 Saudável';
+                    statusClass = 'status-healthy';
+                    break;
+                case 'warning':
+                    statusText = '🟡 Atenção';
+                    statusClass = 'status-warning';
+                    break;
+                case 'critical':
+                    statusText = '🔴 Crítico';
+                    statusClass = 'status-critical';
+                    break;
+                default:
+                    statusText = '⚪ Desconhecido';
+                    statusClass = 'status-warning';
+            }
+
+            statusBadge.textContent = statusText;
+            statusBadge.className = `status-badge ${statusClass}`;
+            overallStatus.textContent = statusText;
+
+            // Update uptime
+            if (health.uptime) {
+                document.getElementById('uptime').textContent = formatUptime(health.uptime);
+            }
+        }
+
+        function updateMetrics(metrics) {
+            if (metrics.requests) {
+                document.getElementById('totalRequests').textContent = metrics.requests.total || 0;
+                document.getElementById('errorRate').textContent = (metrics.requests.errorRate || 0).toFixed(2) + '%';
+                document.getElementById('avgResponseTime').textContent = (metrics.requests.avgResponseTime || 0).toFixed(0) + 'ms';
+            }
+
+            if (metrics.system) {
+                document.getElementById('cacheHitRate').textContent = (metrics.system.cacheHitRate || 0).toFixed(1) + '%';
+                document.getElementById('cacheHits').textContent = metrics.system.cacheHits || 0;
+                document.getElementById('cacheMisses').textContent = metrics.system.cacheMisses || 0;
+                document.getElementById('rateLimitHits').textContent = metrics.system.rateLimitHits || 0;
+                document.getElementById('authFailures').textContent = metrics.system.authFailures || 0;
+            }
+
+            if (metrics.usage) {
+                document.getElementById('activeUsers').textContent = metrics.usage.activeUsers || 0;
+            }
+
+            // Simulate some performance data
+            const cpuUsage = Math.random() * 100;
+            const memoryUsage = Math.random() * 100;
+
+            document.getElementById('cpuUsage').textContent = cpuUsage.toFixed(1) + '%';
+            document.getElementById('cpuProgress').style.width = cpuUsage + '%';
+
+            document.getElementById('memoryUsage').textContent = memoryUsage.toFixed(1) + '%';
+            document.getElementById('memoryProgress').style.width = memoryUsage + '%';
+        }
+
+        function updateHealthChecks(components) {
+            const tbody = document.getElementById('healthChecks');
+            if (!components || Object.keys(components).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">Nenhum health check disponível</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = Object.entries(components).map(([name, check]) => `
+                <tr>
+                    <td>${name}</td>
+                    <td>
+                        <span class="status-badge ${getStatusClass(check.status)}">
+                            ${getStatusIcon(check.status)} ${check.status}
+                        </span>
+                    </td>
+                    <td>${check.timestamp ? new Date(check.timestamp).toLocaleString() : 'N/A'}</td>
+                    <td>${check.duration ? check.duration + 'ms' : 'N/A'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateLogs() {
+            const logsContainer = document.getElementById('logsContainer');
+
+            // Simulated logs
+            const logs = [
+                { level: 'info', message: 'MCP Server iniciado com sucesso', timestamp: new Date() },
+                { level: 'info', message: 'Plugin system carregado', timestamp: new Date(Date.now() - 60000) },
+                { level: 'warn', message: 'Rate limit atingido para usuário X', timestamp: new Date(Date.now() - 120000) },
+                { level: 'info', message: 'Webhook entregue com sucesso', timestamp: new Date(Date.now() - 180000) },
+                { level: 'error', message: 'Falha na autenticação', timestamp: new Date(Date.now() - 240000) }
+            ];
+
+            logsContainer.innerHTML = logs.map(log => `
+                <div class="log-entry log-${log.level}">
+                    [${log.timestamp.toLocaleTimeString()}] ${log.level.toUpperCase()}: ${log.message}
+                </div>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'healthy': return 'status-healthy';
+                case 'warning': return 'status-warning';
+                case 'unhealthy':
+                case 'critical': return 'status-critical';
+                default: return 'status-warning';
+            }
+        }
+
+        function getStatusIcon(status) {
+            switch (status) {
+                case 'healthy': return '🟢';
+                case 'warning': return '🟡';
+                case 'unhealthy':
+                case 'critical': return '🔴';
+                default: return '⚪';
+            }
+        }
+
+        function formatUptime(uptime) {
+            const seconds = Math.floor(uptime / 1000);
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes}m`;
+            }
+        }
+
+        function showError(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-error';
+            alert.textContent = message;
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.grid'));
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function refreshData() {
+            loadData();
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
