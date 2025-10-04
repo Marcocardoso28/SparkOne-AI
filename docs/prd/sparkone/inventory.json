@@ -34,5 +34,11 @@
   "deployment_validation": {
     "healthchecks": [],
     "containers": []
+  },
+  "components": {
+    "ai_core_v1": {
+      "status": "active",
+      "last_verified": "2025-10-04T23:14:08Z"
+    }
   }
 }
