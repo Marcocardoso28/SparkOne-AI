@@ -81,13 +81,13 @@ git clone https://github.com/seu-usuario/sparkone.git .
 
 ```bash
 # Copiar arquivo de exemplo
-cp config/production.env .env.prod
+cp config/production.env .env
 
 # Editar configurações
-nano .env.prod
+nano .env
 ```
 
-**Configurações importantes no .env.prod:**
+**Configurações importantes no .env:**
 
 ```env
 # Ambiente
@@ -222,7 +222,7 @@ crontab -e
 
 Os alertas por email são configurados automaticamente. Verificar:
 
-1. Configurações SMTP no `.env.prod`
+1. Configurações SMTP no `.env`
 2. Alertas no Alertmanager
 3. Regras no Prometheus
 

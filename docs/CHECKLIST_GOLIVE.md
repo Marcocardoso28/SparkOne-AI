@@ -29,7 +29,7 @@ Este checklist deve ser seguido antes de colocar o SparkOne em produção.
   - [ ] `traefik.yourdomain.com`
 
 ### ✅ Configurações de Ambiente
-- [ ] Arquivo `.env.prod` configurado
+- [ ] Arquivo `.env` configurado
 - [ ] Todas as variáveis obrigatórias preenchidas:
   - [ ] `DATABASE_URL`
   - [ ] `WEB_PASSWORD`

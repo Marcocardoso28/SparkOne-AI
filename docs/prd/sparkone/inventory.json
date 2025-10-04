@@ -74,6 +74,12 @@
         "file": "src/app/agents/agno.py",
         "description": "Orquestrador usando LLM para emular comportamento Agno",
         "status": "implemented"
+      },
+      {
+        "name": "BriefService",
+        "file": "src/app/routers/brief.py",
+        "description": "Geração de resumos estruturados e textuais diários",
+        "status": "implemented"
       }
     ],
     "planned": [
@@ -295,7 +301,10 @@
   "deployment": {
     "local": "SQLite + uvicorn",
     "docker": "PostgreSQL + Redis + Docker Compose",
-    "production": "VPS + Traefik/HTTPS (planejado)"
+    "production": "VPS + Traefik/HTTPS (planejado)",
+    "notes": [
+      "docker-compose.prod.yml requer arquivo .env presente na raiz para carregar variáveis via env_file"
+    ]
   },
   "gaps_and_todos": [
     "ProactivityEngine não implementado",

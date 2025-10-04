@@ -35,10 +35,13 @@ restore_database() {
     log "Iniciando restore do banco de dados..."
     
     # Carregar variáveis de ambiente
-    if [ -f "/opt/sparkone/.env.prod" ]; then
+    if [ -f "/opt/sparkone/.env" ]; then
+        source /opt/sparkone/.env
+    elif [ -f "/opt/sparkone/.env.prod" ]; then
+        log "AVISO: arquivo legado .env.prod detectado; migre para .env"
         source /opt/sparkone/.env.prod
     else
-        log "ERRO: Arquivo .env.prod não encontrado"
+        log "ERRO: Arquivo .env não encontrado"
         return 1
     fi
     
