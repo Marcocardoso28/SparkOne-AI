@@ -1,319 +1,38 @@
 {
   "project": {
     "name": "SparkOne",
-    "version": "0.1.0",
-    "description": "Assistente pessoal modular inspirado no Jarvis do Marco Cardoso",
-    "status": "mid-development",
-    "completion_estimate": "60%"
+    "environment": "production",
+    "description": "Personal assistant stack prepared for container deployment",
+    "last_verified": "2025-10-04T18:39:59Z"
   },
-  "architecture": {
-    "framework": "FastAPI",
-    "language": "Python 3.11+",
-    "database": "PostgreSQL 15+ with pgvector",
-    "cache": "Redis 7",
-    "orchestration": "Agno (bridge implementation)",
-    "deployment": "Docker Compose"
-  },
-  "dependencies": {
-    "core": [
-      "fastapi>=0.115,<0.118",
-      "uvicorn[standard]>=0.30,<0.38",
-      "pydantic>=2.8,<3",
-      "pydantic-settings>=2.3,<3",
-      "httpx>=0.28,<0.29"
-    ],
-    "database": [
-      "SQLAlchemy[asyncio]>=2.0.30,<2.1",
-      "asyncpg>=0.29,<0.31",
-      "alembic>=1.13,<1.17",
-      "pgvector>=0.2.5"
-    ],
-    "ai_providers": [
-      "openai>=1.51,<2"
-    ],
-    "integrations": [
-      "redis>=5.0,<5.1",
-      "google-auth>=2.31,<3",
-      "google-auth-oauthlib>=1.2,<2",
-      "google-api-python-client>=2.134,<3"
-    ],
-    "observability": [
-      "structlog>=24.1,<25",
-      "prometheus-client>=0.20,<0.21",
-      "opentelemetry-api>=1.25,<2",
-      "opentelemetry-sdk>=1.25,<2"
-    ],
-    "security": [
-      "pyotp>=2.9,<3",
-      "passlib[bcrypt]>=1.7,<2",
-      "python-jose[cryptography]>=3.3,<4"
-    ]
-  },
-  "services": {
-    "implemented": [
-      {
-        "name": "TaskService",
-        "file": "src/app/services/tasks.py",
-        "description": "Integra com Notion e mantém snapshots no Postgres",
-        "status": "implemented"
-      },
-      {
-        "name": "CalendarService", 
-        "file": "src/app/services/calendar.py",
-        "description": "Interface para provedores CalDAV e Google Calendar",
-        "status": "implemented"
-      },
-      {
-        "name": "PersonalCoachService",
-        "file": "src/app/services/personal_coach.py", 
-        "description": "Correções de texto e sugestões personalizadas",
-        "status": "implemented"
-      },
-      {
-        "name": "AgnoBridge",
-        "file": "src/app/agents/agno.py",
-        "description": "Orquestrador usando LLM para emular comportamento Agno",
-        "status": "implemented"
-      },
-      {
-        "name": "BriefService",
-        "file": "src/app/routers/brief.py",
-        "description": "Geração de resumos estruturados e textuais diários",
-        "status": "implemented"
-      }
-    ],
-    "planned": [
-      {
-        "name": "ProactivityEngine",
-        "description": "Scheduler (APScheduler) para brief, lembretes e notificações",
-        "status": "planned"
-      },
-      {
-        "name": "RecommendationService", 
-        "description": "Integra APIs de localização (Google Places/Eventbrite)",
-        "status": "planned"
-      }
-    ]
-  },
-  "integrations": {
-    "implemented": [
-      {
-        "name": "Evolution API",
-        "file": "src/app/integrations/evolution_api.py",
-        "description": "Cliente para WhatsApp via Evolution API",
-        "status": "implemented"
-      },
-      {
-        "name": "Notion",
-        "file": "src/app/integrations/notion.py", 
-        "description": "Cliente REST API para Notion",
-        "status": "implemented"
-      },
-      {
-        "name": "Google Calendar",
-        "file": "src/app/integrations/google_calendar.py",
-        "description": "Integração com Google Calendar API",
-        "status": "implemented"
-      },
-      {
-        "name": "CalDAV",
-        "file": "src/app/integrations/caldav.py",
-        "description": "Cliente CalDAV para Apple Calendar",
-        "status": "implemented"
-      }
-    ],
-    "planned": [
-      {
-        "name": "Google Places",
-        "description": "API para recomendações baseadas em localização",
-        "status": "planned"
-      },
-      {
-        "name": "Eventbrite",
-        "description": "API para recomendações de eventos",
-        "status": "planned"
-      }
-    ]
-  },
-  "channels": {
-    "implemented": [
-      {
-        "name": "WhatsApp",
-        "endpoint": "/webhooks/whatsapp",
-        "description": "Webhook Evolution API para mensagens WhatsApp",
-        "status": "implemented"
-      },
-      {
-        "name": "Web UI",
-        "endpoint": "/web",
-        "description": "Interface web minimalista com suporte a texto, áudio e imagem",
-        "status": "implemented"
-      },
-      {
-        "name": "Google Sheets",
-        "endpoint": "/channels/sheets",
-        "description": "Sincronização com Google Sheets",
-        "status": "implemented"
-      },
-      {
-        "name": "REST API",
-        "endpoint": "/ingest",
-        "description": "Endpoint direto para ingestão de mensagens",
-        "status": "implemented"
-      }
-    ]
-  },
-  "routers": [
+  "services": [
     {
-      "name": "health",
-      "file": "src/app/routers/health.py",
-      "endpoints": ["/health", "/health/database"],
-      "description": "Health checks e status da aplicação"
+      "name": "sparkone-api",
+      "compose_definition": "ops/staging-compose.yml",
+      "desired_state": "prepared",
+      "healthcheck": "GET /health (FastAPI)"
     },
     {
-      "name": "ingest",
-      "file": "src/app/routers/ingest.py", 
-      "endpoints": ["/ingest"],
-      "description": "Ingestão direta de mensagens"
+      "name": "prometheus",
+      "compose_definition": "ops/staging-compose.yml",
+      "desired_state": "prepared",
+      "healthcheck": "wget -qO- http://localhost:9090/-/ready >/dev/null"
     },
     {
-      "name": "channels",
-      "file": "src/app/routers/channels.py",
-      "endpoints": ["/channels/{channel}"],
-      "description": "Envio de mensagens por canal"
+      "name": "node-exporter",
+      "compose_definition": "ops/staging-compose.yml",
+      "desired_state": "prepared",
+      "healthcheck": "scrape target localhost:9100"
     },
     {
-      "name": "webhooks",
-      "file": "src/app/routers/webhooks.py",
-      "endpoints": ["/webhooks/whatsapp"],
-      "description": "Webhooks para integrações externas"
-    },
-    {
-      "name": "web",
-      "file": "src/app/routers/web.py",
-      "endpoints": ["/web"],
-      "description": "Interface web com autenticação HTTP Basic"
-    },
-    {
-      "name": "tasks",
-      "file": "src/app/routers/tasks.py",
-      "endpoints": ["/tasks"],
-      "description": "Gerenciamento de tarefas"
-    },
-    {
-      "name": "brief",
-      "file": "src/app/routers/brief.py",
-      "endpoints": ["/brief/structured", "/brief/text"],
-      "description": "Resumos estruturados e textuais"
-    },
-    {
-      "name": "events",
-      "file": "src/app/routers/events.py",
-      "endpoints": ["/events"],
-      "description": "Lista de eventos do sistema"
-    },
-    {
-      "name": "metrics",
-      "file": "src/app/routers/metrics.py",
-      "endpoints": ["/metrics"],
-      "description": "Métricas Prometheus"
+      "name": "cadvisor",
+      "compose_definition": "ops/staging-compose.yml",
+      "desired_state": "prepared",
+      "healthcheck": "scrape target localhost:8080"
     }
   ],
-  "middleware": [
-    {
-      "name": "CORSMiddleware",
-      "description": "Configuração CORS com segurança para produção"
-    },
-    {
-      "name": "CorrelationIdMiddleware", 
-      "description": "IDs de correlação para rastreamento de requests"
-    },
-    {
-      "name": "PrometheusMiddleware",
-      "description": "Coleta de métricas para observabilidade"
-    },
-    {
-      "name": "RateLimitMiddleware",
-      "description": "Rate limiting baseado em Redis"
-    },
-    {
-      "name": "SecurityHeadersMiddleware",
-      "description": "Headers de segurança (HSTS, CSP, etc.)"
-    },
-    {
-      "name": "SecurityLoggingMiddleware",
-      "description": "Log de eventos de segurança"
-    }
-  ],
-  "database_models": [
-    {
-      "name": "Task",
-      "file": "src/app/models/db/tasks.py",
-      "description": "Modelo para tarefas com status e metadados"
-    },
-    {
-      "name": "Event",
-      "file": "src/app/models/db/events.py", 
-      "description": "Modelo para eventos de calendário"
-    },
-    {
-      "name": "Message",
-      "file": "src/app/models/db/messages.py",
-      "description": "Histórico de mensagens processadas"
-    }
-  ],
-  "configuration": {
-    "environment_variables": [
-      "DATABASE_URL",
-      "REDIS_URL", 
-      "OPENAI_API_KEY",
-      "LOCAL_LLM_URL",
-      "EVOLUTION_API_BASE_URL",
-      "NOTION_API_KEY",
-      "GOOGLE_CALENDAR_CREDENTIALS_PATH",
-      "WEB_PASSWORD",
-      "CALENDAR_PROVIDER"
-    ],
-    "providers": {
-      "llm": ["openai", "local"],
-      "embedding": ["openai", "local"],
-      "calendar": ["google", "caldav", "none"]
-    }
-  },
-  "security_features": [
-    "HTTP Basic Authentication para Web UI",
-    "CSRF tokens para formulários web",
-    "Rate limiting por IP",
-    "Headers de segurança (HSTS, CSP, COOP)",
-    "Sanitização de entrada",
-    "Redação de logs sensíveis",
-    "Validação de tamanho de upload",
-    "2FA com TOTP"
-  ],
-  "observability": [
-    "Métricas Prometheus",
-    "Logs estruturados com structlog",
-    "Correlation IDs",
-    "Health checks granulares",
-    "OpenTelemetry (opcional)",
-    "Profiling de performance"
-  ],
-  "deployment": {
-    "local": "SQLite + uvicorn",
-    "docker": "PostgreSQL + Redis + Docker Compose",
-    "production": "VPS + Traefik/HTTPS (planejado)",
-    "notes": [
-      "docker-compose.prod.yml requer arquivo .env presente na raiz para carregar variáveis via env_file"
-    ]
-  },
-  "gaps_and_todos": [
-    "ProactivityEngine não implementado",
-    "RecommendationService não implementado", 
-    "Integração completa com Agno pendente",
-    "Testes de cobertura abaixo de 85%",
-    "Documentação API incompleta",
-    "Pipeline CI/CD não configurado",
-    "Observabilidade avançada pendente",
-    "Migração para LangGraph planejada"
-  ]
+  "deployment_validation": {
+    "healthchecks": [],
+    "containers": []
+  }
 }
