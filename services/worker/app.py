@@ -51,6 +51,7 @@ TZ = ZoneInfo(settings.timezone)
 JOB_DEFINITIONS = (
     {"id": "event-reminder", "interval_minutes": 5},
     {"id": "task-reminder", "interval_minutes": 5},
+    {"id": "dlq-recovery", "interval_minutes": 2},
 )
 
 scheduler: AsyncIOScheduler | None = None
@@ -148,6 +149,7 @@ async def _events_job() -> dict[str, Any]:
         result = await session.execute(query)
         upcoming = result.scalars().all()
 
+    deliveries = {"sent": 0, "queued": 0, "deliveries": []}
     if upcoming:
         preview = [
             {
@@ -157,7 +159,7 @@ async def _events_job() -> dict[str, Any]:
             }
             for event in upcoming[:5]
         ]
-        await notification_manager.send_alert(
+        deliveries = await notification_manager.send_alert(
             job_name="event-reminder",
             severity="info",
             message=f"{len(upcoming)} eventos nas próximas 60 minutos",
@@ -168,6 +170,7 @@ async def _events_job() -> dict[str, Any]:
         "alerts_dispatched": bool(upcoming),
         "upcoming_events": len(upcoming),
         "window_minutes": 60,
+        "deliveries": deliveries,
     }
 
 
@@ -189,6 +192,7 @@ async def _tasks_job() -> dict[str, Any]:
         result = await session.execute(query)
         due_tasks = result.scalars().all()
 
+    deliveries = {"sent": 0, "queued": 0, "deliveries": []}
     if due_tasks:
         preview = [
             {
@@ -198,7 +202,7 @@ async def _tasks_job() -> dict[str, Any]:
             }
             for task in due_tasks[:5]
         ]
-        await notification_manager.send_alert(
+        deliveries = await notification_manager.send_alert(
             job_name="task-reminder",
             severity="warning",
             message=f"{len(due_tasks)} tarefas vencem em até 90 minutos",
@@ -209,6 +213,7 @@ async def _tasks_job() -> dict[str, Any]:
         "alerts_dispatched": bool(due_tasks),
         "due_tasks": len(due_tasks),
         "window_minutes": 90,
+        "deliveries": deliveries,
     }
 
 
@@ -218,6 +223,22 @@ async def run_event_reminder() -> JobResult:
 
 async def run_task_reminder() -> JobResult:
     return await _execute_job("task-reminder", _tasks_job)
+
+
+async def _dlq_job() -> dict[str, Any]:
+    assert notification_manager is not None
+
+    result = await notification_manager.reprocess_dlq(limit=25)
+    return {
+        "alerts_dispatched": bool(result["success"]),
+        "attempted": result["attempted"],
+        "success": result["success"],
+        "failure": result["failure"],
+    }
+
+
+async def run_dlq_recovery() -> JobResult:
+    return await _execute_job("dlq-recovery", _dlq_job)
 
 
 def _prime_metrics() -> None:
@@ -231,8 +252,13 @@ def _prime_metrics() -> None:
 def _schedule_jobs(current_scheduler: AsyncIOScheduler) -> None:
     now = datetime.now(tz=TZ)
     for definition in JOB_DEFINITIONS:
+        handler = {
+            "event-reminder": run_event_reminder,
+            "task-reminder": run_task_reminder,
+            "dlq-recovery": run_dlq_recovery,
+        }[definition["id"]]
         current_scheduler.add_job(
-            run_event_reminder if definition["id"] == "event-reminder" else run_task_reminder,
+            handler,
             trigger=IntervalTrigger(minutes=definition["interval_minutes"], timezone=TZ),
             id=definition["id"],
             replace_existing=True,
@@ -289,4 +315,4 @@ async def metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-__all__ = ["app", "run_event_reminder", "run_task_reminder"]
+__all__ = ["app", "run_event_reminder", "run_task_reminder", "run_dlq_recovery"]

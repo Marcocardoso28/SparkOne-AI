@@ -80,7 +80,7 @@ ignore = ["S101", "S311"]
 docstring-code-format = true
 
 [tool.pytest.ini_options]
-addopts = "-q --cov=src/app --cov-report=term-missing --cov-report=xml --cov-fail-under=60"
+addopts = "-q --cov=services/worker --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
 testpaths = ["src/app/tests", "tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
