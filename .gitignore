@@ -13,8 +13,9 @@ venv/
 ENV/
 env/
 
-# Node.js
+# Node.js (if not used, can be removed)
 node_modules/
+package-lock.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -30,6 +31,8 @@ sparkone.db
 .env.local
 .env.production
 .env.staging
+.env.development
+.env.test
 
 # Uploads and temporary files
 uploads/
@@ -38,6 +41,9 @@ tmp/
 *.tmp
 *.log
 *.pid
+
+# Temporários consolidados
+.temp/
 
 # IDE and editor files
 .vscode/
@@ -97,3 +103,17 @@ htmlcov/
 nul
 *.bak
 *.backup
+# SparkOne specific
+data/databases/*.db
+data/databases/*.db-*
+data/backups/*.sql
+data/uploads/*
+!data/uploads/.gitkeep
+logs/
+backup_*/
+prd_audit_*.json
+# IDE specific
+# OS specific
+# Project specific
+uploads/temp/
+out/

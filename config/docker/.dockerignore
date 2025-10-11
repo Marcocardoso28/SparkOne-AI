@@ -1,0 +1,156 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+.tox/
+.venv/
+venv/
+ENV/
+env/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+
+# Uploads and temporary files
+uploads/
+temp/
+tmp/
+*.tmp
+*.log
+*.pid
+.temp/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Security and keys
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# Scripts
+scripts/
+
+# Reports
+reports/
+*.html
+*.json
+
+# Backup files
+backup_*/
+*.backup
+*.bak
+
+# Project specific
+data/databases/*.db
+data/databases/*.db-*
+data/backups/*.sql
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Temporary files
+nul
+*.cache.json
+audit_cache.json
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# MyPy cache
+.mypy_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/

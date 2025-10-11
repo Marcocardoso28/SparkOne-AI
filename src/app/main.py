@@ -14,14 +14,14 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .config import get_settings
 from .core.logging import configure_logging
 from .core.startup import register_startup_validations
-from .dependencies import get_evolution_client, get_notion_client
+from .api.dependencies import get_evolution_client, get_notion_client
 from .middleware.correlation import CorrelationIdMiddleware
 from .middleware.metrics import PrometheusMiddleware
 from .middleware.rate_limiting import RateLimitMiddleware, resolve_rate_limit_store
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .middleware.security_logging import SecurityLoggingMiddleware
 from .observability import instrument_application
-from .routers import (
+from .api.v1 import (
     alerts,
     auth,
     brief,

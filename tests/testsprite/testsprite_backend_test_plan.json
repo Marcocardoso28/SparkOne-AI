@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "test_get_system_health_status",
+    "description": "Verify that the GET /health endpoint returns the overall system health status including status, timestamp, version, and environment fields with a 200 HTTP status code."
+  },
+  {
+    "id": "TC002",
+    "title": "test_get_database_health_status",
+    "description": "Verify that the GET /health/database endpoint returns the database health status including status, database name, and connected boolean with a 200 HTTP status code."
+  },
+  {
+    "id": "TC003",
+    "title": "test_get_redis_health_status",
+    "description": "Verify that the GET /health/redis endpoint returns the Redis health status including status, redis instance name, and connected boolean with a 200 HTTP status code."
+  },
+  {
+    "id": "TC004",
+    "title": "test_list_tasks_with_filters_and_pagination",
+    "description": "Verify that the GET /tasks endpoint returns a list of tasks filtered by status and channel, supports limit and offset for pagination, and returns total count along with tasks array."
+  },
+  {
+    "id": "TC005",
+    "title": "test_create_new_task_with_valid_data",
+    "description": "Verify that the POST /tasks endpoint creates a new task successfully when provided with valid title, channel, sender, and optional fields, returning 201 status and the created task details."
+  },
+  {
+    "id": "TC006",
+    "title": "test_update_task_status_success",
+    "description": "Verify that the PATCH /tasks/{task_id}/status endpoint updates the status of an existing task successfully and returns a 200 HTTP status code."
+  },
+  {
+    "id": "TC007",
+    "title": "test_update_task_status_not_found",
+    "description": "Verify that the PATCH /tasks/{task_id}/status endpoint returns a 404 HTTP status code when trying to update the status of a non-existent task."
+  },
+  {
+    "id": "TC008",
+    "title": "test_user_login_with_valid_credentials",
+    "description": "Verify that the POST /auth/login endpoint authenticates a user with valid username and password and returns an access token with a 200 HTTP status code."
+  },
+  {
+    "id": "TC009",
+    "title": "test_user_login_with_invalid_credentials",
+    "description": "Verify that the POST /auth/login endpoint returns a 401 HTTP status code when provided with invalid username or password."
+  },
+  {
+    "id": "TC010",
+    "title": "test_ingest_message_success",
+    "description": "Verify that the POST /ingest endpoint accepts and processes a valid message payload with required fields message, channel, and sender, returning a 202 HTTP status code."
+  }
+]

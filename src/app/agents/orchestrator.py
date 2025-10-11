@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from app.models.schemas import ChannelMessage, MessageType
-from app.services.calendar import CalendarService
-from app.services.classification import ClassificationService
-from app.services.personal_coach import PersonalCoachService
-from app.services.tasks import TaskService
+from app.domain.services.calendar import CalendarService
+from app.domain.services.classification import ClassificationService
+from app.domain.services.personal_coach import PersonalCoachService
+from app.domain.services.tasks import TaskService
 
 from .agno import AgnoBridge
 
