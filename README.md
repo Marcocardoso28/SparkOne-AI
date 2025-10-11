@@ -1,6 +1,10 @@
 # SparkOne
 
-Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este repositório contém o MVP em FastAPI com orquestração via Agno (a ser integrado), suporte a múltiplos provedores de modelo (OpenAI + fallback local) e infraestrutura local com Docker Compose ou SQLite.
+Status Final: ✅ SparkOne — AI Enterprise Core
+Versão: v1.0.0
+Data: 2025-10-11T13:32:20-03:00
+
+Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este repositório contém o MVP em FastAPI com orquestração cognitiva (AgnoBridge integrada), suporte a múltiplos provedores de modelo (OpenAI + compatível/local com roteamento e fallback) e infraestrutura local com Docker Compose ou SQLite.
 
 > Para uma visão resumida em inglês, consulte `README_EN.md`.
 

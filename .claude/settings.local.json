@@ -63,7 +63,8 @@
       "Bash(export CONTEXT7_API_BASE_URL=\"https://api.context7.dev/api\")",
       "mcp__gemini-cli__ask-gemini",
       "mcp__filesystem__read_text_file",
-      "mcp__filesystem__edit_file"
+      "mcp__filesystem__edit_file",
+      "Read(//home/marcocardoso/audit/**)"
     ],
     "deny": [],
     "ask": []
