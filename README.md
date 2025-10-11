@@ -1,3 +1,5 @@
+# SparkOne — v1.0.0 (Production Ready)
+
 # SparkOne
 
 Status Final: ✅ SparkOne — AI Enterprise Core

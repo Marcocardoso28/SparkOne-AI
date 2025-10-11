@@ -13,8 +13,9 @@ from pathlib import Path
 import sqlalchemy as sa
 from alembic import op
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+# Ensure project root is on path so 'src' package resolves
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
 
 from src.app.models.schemas import Channel, MessageType
 

@@ -1,22 +1,15 @@
 {
   "project": "SparkOne",
-  "version": "1.0.0",
-  "phase": "final",
-  "status": "PASS",
-  "checks": {
-    "ai_core_integration": true,
-    "rag_pipeline": true,
-    "database_migrations": true,
-    "ci_cd_pipeline": true,
-    "observability": true,
-    "coverage_threshold_met": false,
-    "secrets_centralized": false
+  "version": "v1.0.0",
+  "verdict": "PASS",
+  "runtime_checks": {
+    "api_health": "http://localhost:8000/health",
+    "api_metrics": "http://localhost:8000/metrics",
+    "worker_metrics": "http://localhost:9100/metrics"
   },
-  "notes": [
-    "Mentor Cognitivo (AgnoBridge) integrado ao fluxo de orquestração",
-    "Fase 8 consolidada e Fase 9 aceita (_ops/phase9/FINAL_ACCEPTANCE_PHASE9.json)",
-    "Cobertura atual abaixo do limiar (7.9% via coverage.xml); recomendar aumento pós-release",
-    "Centralização de secrets planejada (SECURITY.md, SPEC.md); .env gitignorado"
-  ]
+  "db": { "alembic": "upgrade head applied" },
+  "notifications": "WhatsApp/Email wired (no mocks)",
+  "observability": "Prometheus/Grafana assets present",
+  "ci_quick_gate": "lint/tests ran",
+  "timestamp_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
-

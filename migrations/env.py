@@ -9,8 +9,9 @@ from pathlib import Path
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Ensure project root is on sys.path so we can import 'src.*'
+project_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(project_root))
 
 # Import all models so they are registered with Base.metadata
 from src.app.models.db.base import Base
