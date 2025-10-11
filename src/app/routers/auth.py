@@ -12,9 +12,9 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.database import get_session
-from src.app.models.db.user import User
-from src.app.services.auth_2fa import two_factor_service
+from app.core.database import get_session
+from app.models.db.user import User
+from app.services.auth_2fa import two_factor_service
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer(auto_error=False)
@@ -245,4 +245,3 @@ async def get_current_user(
 
 
 __all__ = ["router", "get_current_user"]
-

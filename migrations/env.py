@@ -9,12 +9,14 @@ from pathlib import Path
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Ensure project root is on sys.path so we can import 'src.*'
+# Ensure 'src' is on sys.path so we can import 'app.*' from src layout
 project_root = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(project_root))
+src_path = project_root / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
-# Import all models so they are registered with Base.metadata
-from src.app.models.db.base import Base
+# Import all models so they are registered with Base.metadata (single source of truth)
+from app.models.db.base import Base
 
 config = context.config
 if config.config_file_name is not None:

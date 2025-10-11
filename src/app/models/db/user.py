@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.sql import func
 
-from src.app.models.db.base import Base
+from app.models.db.base import Base
 
 
 class User(Base):
@@ -63,4 +63,3 @@ class User(Base):
     def has_2fa_enabled(self) -> bool:
         """Verifica se o usuário tem 2FA habilitado."""
         return self.two_factor_enabled and self.totp_secret is not None
-

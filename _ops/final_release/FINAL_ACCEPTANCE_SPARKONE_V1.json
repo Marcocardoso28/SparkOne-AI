@@ -1,15 +1,29 @@
 {
-  "project": "SparkOne",
-  "version": "v1.0.0",
-  "verdict": "PASS",
-  "runtime_checks": {
-    "api_health": "http://localhost:8000/health",
-    "api_metrics": "http://localhost:8000/metrics",
-    "worker_metrics": "http://localhost:9100/metrics"
+  "project": "SparkOne-AI",
+  "version": "v1.0.1",
+  "status": "PASS_WITH_NOTES",
+  "db": {
+    "alembic_env": "uses app.models.db.base.Base",
+    "migrations": "configured",
+    "runtime_upgrade": "not_executed_here"
   },
-  "db": { "alembic": "upgrade head applied" },
-  "notifications": "WhatsApp/Email wired (no mocks)",
-  "observability": "Prometheus/Grafana assets present",
-  "ci_quick_gate": "lint/tests ran",
-  "timestamp_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  "health": {
+    "endpoints": ["/health", "/metrics"],
+    "traefik": {
+      "router": "sparkone-api",
+      "service_port": 8000,
+      "network": "reverse-proxy"
+    }
+  },
+  "images": [
+    "prom/prometheus:v2.54.1",
+    "grafana/grafana:11.2.0",
+    "prom/alertmanager:v0.27.0",
+    "jaegertracing/all-in-one:1.58",
+    "redis:7-alpine"
+  ],
+  "notes": [
+    "Run 'alembic upgrade head' on the VPS or DB-connected environment",
+    "Verify Traefik hosts resolve in production"
+  ]
 }

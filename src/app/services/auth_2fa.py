@@ -15,9 +15,9 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.database import get_session
-from src.app.models.db.user import User
-from src.app.models.schemas import UserCreate, UserResponse
+from app.core.database import get_session
+from app.models.db.user import User
+from app.models.schemas import UserCreate, UserResponse
 
 
 class TwoFactorAuthService:
@@ -188,4 +188,3 @@ two_factor_service = TwoFactorAuthService()
 
 
 __all__ = ["TwoFactorAuthService", "two_factor_service"]
-
