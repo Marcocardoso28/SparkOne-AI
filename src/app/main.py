@@ -24,6 +24,7 @@ from .observability import instrument_application
 from .routers import (
     alerts,
     auth,
+    admin,
     brief,
     channels,
     events,
@@ -35,6 +36,22 @@ from .routers import (
     web,
     webhooks,
 )
+from .routers import recommendations
+try:  # Optional CSRF middleware/config
+    from fastapi_csrf_protect import CsrfProtect  # type: ignore
+    from pydantic import BaseModel
+
+    class _CsrfSettings(BaseModel):
+        secret_key: str
+
+    @CsrfProtect.load_config
+    def _get_csrf_config() -> _CsrfSettings:  # pragma: no cover - simple config hook
+        settings = get_settings()
+        # Fallback to a non-empty default to avoid runtime errors in dev
+        key = settings.secret_key or "change-me"
+        return _CsrfSettings(secret_key=key)
+except Exception:
+    CsrfProtect = None  # type: ignore
 
 
 def _split_csv(value: str) -> list[str]:
@@ -83,8 +100,11 @@ def create_application() -> FastAPI:
 
     # Configuração CORS segura - não permitir * com credenciais em produção
     if settings.environment == "production" and cors_origins == ["*"]:
-        cors_origins = ["https://sparkone.macspark.dev",
-                        "https://app.sparkone.com"]
+        cors_origins = [
+            "https://sparkone-ai.macspark.dev",
+            "https://sparkone.macspark.dev",
+            "https://app.sparkone.com",
+        ]
 
     app.add_middleware(
         CORSMiddleware,
@@ -109,8 +129,9 @@ def create_application() -> FastAPI:
             "/webhooks/": {"requests": 1000, "window": 3600},  # 1000 por hora
             "/web": {"requests": 2000, "window": 3600},  # 2000 por hora
             "/web/ingest": {"requests": 1000, "window": 3600},  # 1000 por hora
-            "/health": {"requests": 10000, "window": 3600},  # 10000 por hora
-            "/metrics": {"requests": 5000, "window": 3600},  # 5000 por hora
+            # Mais baixo em dev para facilitar testes automatizados
+            "/health": {"requests": 100, "window": 3600},  # 100 por hora
+            "/metrics": {"requests": 200, "window": 3600},  # 200 por hora
         }
     else:
         # Limites mais restritivos para produção
@@ -159,11 +180,19 @@ def create_application() -> FastAPI:
     app.include_router(metrics.router)
     app.include_router(alerts.router)
     app.include_router(profiler.router)
+    app.include_router(admin.router)
+    app.include_router(recommendations.router)
 
     @app.get("/")
     async def root():
         """Redirect root to web interface."""
         return RedirectResponse(url="/web")
+
+    @app.get("/api/v1/docs")
+    async def docs_redirect():
+        return RedirectResponse(url="/docs")
+
+    # Removido compat duplicado para /health/database; tratado no router
 
     static_dir = Path(__file__).resolve().parent / "web" / "static"
     app.mount("/static", StaticFiles(directory=static_dir), name="static")

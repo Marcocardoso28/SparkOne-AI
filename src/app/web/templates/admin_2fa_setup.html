@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SparkOne · Configurar 2FA</title>
+    <link rel="icon" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <header class="panel__header header-container">
+          <div>
+            <div class="panel__eyebrow">SparkOne</div>
+            <h1>Configurar 2FA (TOTP)</h1>
+            {% if error %}<div class="toast toast--error">{{ error }}</div>{% endif %}
+          </div>
+          <nav>
+            <a class="button" href="/admin">Início</a>
+            <a class="button button--ghost" href="/admin/logout">Sair</a>
+          </nav>
+        </header>
+        <p>Escaneie o QR code com Google Authenticator/1Password/Authy e informe o token abaixo.</p>
+        <img alt="QR" src="{{ qr_code }}" style="max-width:200px; background:#fff; padding:6px; border-radius:8px;" />
+        <p><small>Chave manual: <code>{{ manual_entry_key }}</code></small></p>
+        <details>
+          <summary>Códigos de backup</summary>
+          <ul>
+            {% for c in backup_codes %}<li><code>{{ c }}</code></li>{% endfor %}
+          </ul>
+        </details>
+        <form method="post" action="/admin/2fa/verify" class="composer">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <label class="composer__label" for="token">Token 2FA</label>
+          <input id="token" name="token" required class="input" />
+          <button class="button button--primary">Verificar e habilitar</button>
+        </form>
+      </section>
+    </main>
+  </body>
+  <style>.input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--color-border-strong);background:rgba(15,23,42,0.6);color:var(--color-fg);}</style>
+</html>

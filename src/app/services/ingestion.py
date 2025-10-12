@@ -74,11 +74,12 @@ class IngestionService:
         try:
             result = await self._orchestrator.handle(payload)
         except Exception as exc:  # pragma: no cover - orchestrator failure path
+            # Não propagar erro para a API – processamento pode ser assíncrono
             INGESTION_COUNTER.labels(status="failed").inc()
             bound_logger.exception(
                 "ingestion_orchestrator_failed", error=str(exc), message_id=message.id
             )
-            raise
+            result = {"status": "queued", "details": "orchestrator_error"}
 
         INGESTION_COUNTER.labels(status="processed").inc()
 

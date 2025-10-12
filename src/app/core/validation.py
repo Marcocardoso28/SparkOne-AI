@@ -23,9 +23,19 @@ def validate_critical_config(settings: Settings) -> None:
     """
     errors: list[str] = []
 
-    # Validate LLM providers (can be bypassed when allow_partial_startup is true)
+    # Validate LLM providers (relaxed outside production)
     if not settings.openai_api_key and not settings.local_llm_url:
-        errors.append("No LLM provider configured. Set either OPENAI_API_KEY or LOCAL_LLM_URL.")
+        if settings.environment == "production":
+            errors.append(
+                "No LLM provider configured. Set either OPENAI_API_KEY or LOCAL_LLM_URL."
+            )
+        else:
+            logger.warning(
+                "configuration_warning",
+                message=(
+                    "No LLM provider configured. Set either OPENAI_API_KEY or LOCAL_LLM_URL."
+                ),
+            )
 
     # Validate OpenAI configuration if enabled
     if settings.openai_api_key:

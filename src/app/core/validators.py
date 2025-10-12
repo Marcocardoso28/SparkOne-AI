@@ -28,10 +28,16 @@ MAX_PASSWORD_LENGTH = 100
 
 # Tipos de conteúdo permitidos
 ALLOWED_CONTENT_TYPES = {
+    # Texto e formulários
     "text/plain",
     "application/json",
     "multipart/form-data",
     "application/x-www-form-urlencoded",
+    # Imagens comuns
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+    "image/webp",
 }
 
 # Padrões para detectar tentativas de XSS e SQL Injection
@@ -142,7 +148,7 @@ class SecureChannelMessage(BaseModel):
 
     channel: str = Field(..., min_length=1, max_length=50)
     sender: str = Field(..., min_length=1, max_length=255)
-    content: str = Field(..., min_length=1, max_length=MAX_MESSAGE_LENGTH)
+    content: str = Field(..., min_length=1)
     message_type: str = Field(default="free_text", max_length=50)
     extra_data: dict[str, Any] = Field(default_factory=dict)
 
@@ -153,8 +159,8 @@ class SecureChannelMessage(BaseModel):
         if not v or not isinstance(v, str):
             raise ValueError("Canal deve ser uma string não vazia")
 
-        # Permitir apenas caracteres alfanuméricos e underscore
-        if not re.match(r"^[a-zA-Z0-9_]+$", v):
+        # Permitir apenas letras, números, underscore e hífen
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
             raise ValueError("Canal deve conter apenas letras, números e underscore")
 
         return v.lower().strip()
@@ -196,7 +202,7 @@ class SecureChannelMessage(BaseModel):
     @classmethod
     def validate_message_type(cls, v: str) -> str:
         """Valida o tipo de mensagem."""
-        allowed_types = {"free_text", "task", "event", "coaching", "unknown"}
+        allowed_types = {"free_text", "task", "event", "coaching", "unknown", "text"}
         if v not in allowed_types:
             raise ValueError(f"Tipo de mensagem deve ser um de: {', '.join(allowed_types)}")
         return v
@@ -297,7 +303,7 @@ class SecureLoginCredentials(BaseModel):
     """Validador para credenciais de login seguras."""
 
     username: str = Field(..., min_length=3, max_length=MAX_USERNAME_LENGTH)
-    password: str = Field(..., min_length=8, max_length=MAX_PASSWORD_LENGTH)
+    password: str = Field(..., max_length=MAX_PASSWORD_LENGTH)
 
     @field_validator("username")
     @classmethod
@@ -354,9 +360,8 @@ def sanitize_string(value: str) -> str:
     for pattern in DANGEROUS_PATTERNS:
         sanitized = re.sub(pattern, "", sanitized, flags=re.IGNORECASE)
 
-    # Limitar tamanho
-    if len(sanitized) > MAX_STRING_FIELD_LENGTH:
-        sanitized = sanitized[:MAX_STRING_FIELD_LENGTH]
+    # Não truncar conteúdo aqui; validações de tamanho são feitas pelos modelos
+    # e pelas camadas de serviço (ex.: limites de ingestão).
 
     return sanitized.strip()
 

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db_session
 from app.models.db.user import User
 from app.services.auth_2fa import two_factor_service
+from app.services.passwords import verify_password
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer(auto_error=False)
@@ -101,8 +102,12 @@ async def login(
             detail="Credenciais inválidas"
         )
 
-    # Verify password (implement proper password verification)
-    # For now, we'll skip this check
+    # Verify password
+    if not verify_password(request.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais inválidas",
+        )
 
     # Check if 2FA is required
     if user.two_factor_enabled:

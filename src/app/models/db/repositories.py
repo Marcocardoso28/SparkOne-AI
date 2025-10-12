@@ -33,6 +33,7 @@ async def save_channel_message(session: AsyncSession, payload: ChannelMessage) -
             content=payload.content,
             message_type=payload.message_type,
             occurred_at=payload.created_at,
+            external_id=getattr(payload, "external_id", None),
             extra_data=payload.extra_data,
         )
         session.add(instance)

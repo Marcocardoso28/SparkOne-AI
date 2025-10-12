@@ -23,15 +23,25 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPBasic
 from fastapi.templating import Jinja2Templates
 
 from app.config import Settings, get_settings
+from urllib.parse import urlsplit
 from app.core.database import get_db_session
 from app.dependencies import get_ingestion_service
 from app.models.db.repositories import list_recent_conversations
 from app.models.schemas import Channel, ChannelMessage
 from app.services.ingestion import IngestionService
+from app.models.db.user import User
+from app.services.passwords import verify_password
+
+try:  # CSRF support (optional dependency)
+    from fastapi_csrf_protect import CsrfProtect  # type: ignore
+except Exception:  # pragma: no cover
+    CsrfProtect = None  # type: ignore
 
 try:  # pragma: no cover - opcional
     from redis.asyncio import Redis
@@ -154,6 +164,10 @@ async def _require_auth(
     settings: Settings = Depends(get_settings),
 ) -> None:
     """Verifica se o usuário está autenticado via sessão de login."""
+    # Modo público/desenvolvimento: quando WEB_PASSWORD não está configurada,
+    # não exigir autenticação por sessão.
+    if not settings.web_password:
+        return
     session_token = request.cookies.get(LOGIN_SESSION_COOKIE)
 
     if not session_token:
@@ -182,42 +196,10 @@ async def get_home_page(request: Request) -> HTMLResponse:
     )
 
 
-@router.get("/web/app", response_class=HTMLResponse)
-async def get_web_form(
-    request: Request,
-    settings: Settings = Depends(get_settings),
-) -> HTMLResponse:
-    """Exibe o formulário web principal (requer autenticação)."""
-    try:
-        await _require_auth(request, settings)
-    except HTTPException:
-        # Redireciona para login se não autenticado
-        csrf_token = _generate_csrf_token()
-        response = templates.TemplateResponse(
-            "login.html",
-            {
-                "request": request,
-                "csrf_token": csrf_token,
-                "error": "Login necessário para acessar o sistema",
-            },
-        )
-        _set_csrf_cookie(response, csrf_token, settings)
-        return response
-
-    csrf_token = _generate_csrf_token()
-    response = templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "csrf_token": csrf_token,
-            "timezone": settings.timezone,
-            "max_upload": settings.web_max_upload_size,
-            "user": {"name": "Usuário"},  # Adicionando variável user que estava faltando
-        },
-    )
-    _set_csrf_cookie(response, csrf_token, settings)
-    _refresh_session_cookie(response, settings)
-    return response
+@router.get("/web/health")
+async def web_health() -> dict:
+    """Health endpoint for Web UI."""
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 
 @router.get("/web/login", response_class=HTMLResponse)
@@ -246,11 +228,14 @@ async def process_login(
     password: str = Form(...),
     csrf_token: str = Form(...),
     settings: Settings = Depends(get_settings),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> HTMLResponse:
     """Processa o login do usuário."""
     # Validar CSRF token
     form_data = {"csrf_token": csrf_token}
-    if not _validate_csrf(request, form_data):
+    valid_csrf = _validate_csrf(request, form_data)
+
+    if not valid_csrf:
         # Se CSRF falhar, reexibir formulário com erro
         new_csrf = _generate_csrf_token()
         context = {
@@ -261,8 +246,16 @@ async def process_login(
         }
         return templates.TemplateResponse("login.html", context, status_code=400)
 
-    # Verificar credenciais (usando as mesmas do HTTP Basic Auth)
-    if username != "user" or not secrets.compare_digest(password, settings.web_password):
+    # Verificar credenciais no banco de dados (email usado como username)
+    user = None
+    try:
+        result = await db_session.execute(select(User).where(User.email == username))
+        user = result.scalar_one_or_none()
+    except Exception as e:
+        logger.warning("login_query_failed", error=str(e))
+        user = None
+
+    if not user or not user.is_active or not verify_password(password, user.password_hash):
         new_csrf = _generate_csrf_token()
         context = {
             "request": request,
@@ -280,7 +273,7 @@ async def process_login(
     # Redirecionar para a interface principal
     from fastapi.responses import RedirectResponse
 
-    response = RedirectResponse(url="/web/app", status_code=302)
+    response = RedirectResponse(url="/web", status_code=302)
 
     # Definir cookie de sessão seguro
     # Em desenvolvimento (HTTP), secure deve ser False
@@ -482,10 +475,8 @@ async def ingest_web_payload(
     csrf_token: str = Form(...),
 ) -> JSONResponse:
     if not _validate_csrf(request, {"csrf_token": csrf_token}):
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": "Token de segurança inválido. Tente novamente."},
-        )
+        # Bloqueio explícito com 403 para testes de segurança
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token inválido.")
     try:
         payload = await _build_web_payload(
             message=message,
@@ -631,7 +622,22 @@ def _validate_csrf(request: Request, form_data: dict) -> bool:
     # Usar token do form ou header
     candidate = form_token or header_token
 
-    return cookie_token and candidate and cookie_token == candidate
+    if cookie_token and candidate and cookie_token == candidate:
+        return True
+
+    # Fallback seguro: mesma origem
+    # Aceita se Referer/Origin for o mesmo host e for HTTPS
+    origin = request.headers.get("Origin") or ""
+    referer = request.headers.get("Referer") or ""
+    source = origin or referer
+    try:
+        parts = urlsplit(source)
+    except Exception:
+        parts = None
+    if parts and parts.scheme == "https" and parts.hostname == request.url.hostname:
+        return True
+
+    return False
 
 
 def _validate_session_cookie(request: Request, settings: Settings) -> None:

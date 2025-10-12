@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     event_webhook_url: AnyHttpUrl | None = None
     event_webhook_token: str | None = None
 
+    # Secret for signing (CSRF/JWT/etc.)
+    secret_key: str | None = None
+
     web_password: str | None = None
     web_upload_dir: str = "uploads"
     web_max_upload_size: int = 10 * 1024 * 1024
@@ -72,6 +75,7 @@ class Settings(BaseSettings):
     google_sheets_sync_range: str | None = None
     google_sheets_credentials_path: str | None = None
     google_calendar_credentials_path: str | None = None
+    google_places_api_key: str | None = None
 
     evolution_api_base_url: AnyHttpUrl | None = None
     evolution_api_key: str | None = None

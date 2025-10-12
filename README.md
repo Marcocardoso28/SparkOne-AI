@@ -54,12 +54,26 @@ Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este reposit�
    ```
 4. Acesse a documentação interativa em `http://localhost:8000/docs`.
 
+### Produção (Traefik + TLS)
+- Use o exemplo `.env.production.example` como base e ajuste:
+  - `ENVIRONMENT=production`, `DEBUG=false`, `ALLOW_PARTIAL_STARTUP=false`
+  - `ALLOWED_HOSTS` e `CORS_ORIGINS` apontando para seu domínio (ex.: `https://sparkone-ai.macspark.dev`)
+  - Provedores (OpenAI ou LLM local), Redis/Postgres; `WEB_PASSWORD` é opcional (legado) — o login padrão é via formulário com usuário do banco
+- Execute migrações e smokes após subir:
+  ```bash
+  docker compose -f docker-compose.prod.yml up -d
+  # A imagem aplica migrações automaticamente no startup (entrypoint)
+  # Se preferir, rode manualmente:
+  # docker compose -f docker-compose.prod.yml exec api alembic upgrade head
+  make smoke SMOKE_BASE_URL=https://sparkone-ai.macspark.dev
+  ```
+
 ## Endpoints Principais
 - **Documentação**: `http://localhost:8000/docs` - Interface Swagger da API
 - **Health Check**: `GET /health` - Status da aplicação
 - **Tarefas**: `GET /tasks` - Lista de tarefas
 - **Métricas**: `GET /metrics` - Métricas Prometheus
-- **Interface Web**: `http://localhost:8000/web` - Interface web (HTTP Basic)
+- **Interface Web**: `http://localhost:8000/web` - Interface web com autenticação por formulário (usuário do banco de dados)
 - **Webhooks**: `POST /webhooks/whatsapp` - Webhook Evolution API
 - **Canais**: `POST /channels/{nome}` - Envio de mensagens por canal
 - **Briefs**: `GET /brief/structured` ou `GET /brief/text` - Resumos estruturados
@@ -82,7 +96,8 @@ Defina `ENABLE_EVENT_DISPATCHER=true` e `EVENT_WEBHOOK_URL` para encaminhar even
 O endpoint `/web` disponibiliza uma interface minimalista e responsiva para envio manual de solicitações.
 - Entradas suportadas: texto, upload de imagem e gravação de áudio (MediaRecorder) com pré-visualização.
 - Um modo de ditado utiliza a Web Speech API quando disponível.
-- Defina `WEB_PASSWORD` no `.env` para proteger o acesso via HTTP Basic (usuário livre, somente senha é validada).
+- O login é feito por formulário e validado contra a tabela `users` (com CSRF).
+- A variável `WEB_PASSWORD` é opcional e compatível com o modo legado (HTTP Basic) — não é necessária quando o login por formulário está ativo.
 - As submissões exigem token CSRF: o cookie `sparkone_csrftoken` e o campo oculto `csrf_token` (ou header `X-SparkOne-CSRF`) precisam corresponder.
 
 ## Exemplos de Payload

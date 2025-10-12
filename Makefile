@@ -46,3 +46,6 @@ audit:
 	$(PYTHON) -m pip install pip-audit && pip-audit -r pyproject.toml
 
 check: fmt-check lint typecheck test
+
+smoke:
+	bash ops/smoke.sh

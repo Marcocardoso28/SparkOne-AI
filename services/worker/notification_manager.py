@@ -229,7 +229,7 @@ class NotificationManager:
                         UPDATE worker_dlq
                         SET processed_at = :processed_at,
                             retry_count = retry_count + 1,
-                            error_message = NULL
+                            error_message = ''
                         WHERE id = :entry_id
                         """
                     ),

@@ -4,6 +4,7 @@ services:
     image: traefik:v3.0
     profiles:
     - disabled  # Disabled in production: use Setup-Macspark Traefik on 'proxy' network
+    env_file: .env
     command:
     - --api.dashboard=true
     - --api.insecure=false
@@ -41,7 +42,7 @@ services:
     - traefik.http.routers.traefik.tls.certresolver=letsencrypt
     - traefik.http.routers.traefik.service=api@internal
     - traefik.http.routers.traefik.middlewares=auth
-    - traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$8K1p/a0dL2Lz8bEj8K1p/a0dL2Lz8bEj8K1p/a0dL2Lz8bEj8K1p/a0dL2Lz8bEj
+    - traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASICAUTH_USERS}
   api:
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
@@ -49,7 +50,7 @@ services:
     environment:
     - TZ=${TZ:-America/Sao_Paulo}
     - PYTHONPATH=src
-    - ALLOW_PARTIAL_STARTUP=true
+    - ALLOW_PARTIAL_STARTUP=false
     volumes:
     - ./uploads:/app/uploads
     - ./secrets:/secrets:ro
@@ -63,12 +64,19 @@ services:
       - traefik.docker.network=proxy
       - traefik.http.middlewares.rate-limit.ratelimit.average=50
       - traefik.http.middlewares.rate-limit.ratelimit.burst=100
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
       - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-For=
       - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-Proto=https
       - traefik.http.routers.sparkone-api.entrypoints=web
-      - traefik.http.routers.sparkone-api.middlewares=security-headers,rate-limit
+      - traefik.http.routers.sparkone-api.middlewares=security-headers,rate-limit,redirect-to-https
       - traefik.http.routers.sparkone-api.rule=Host(`sparkone-ai.macspark.dev`)
       - traefik.http.services.sparkone-api.loadbalancer.server.port=8000
+      - traefik.http.routers.sparkone-api-secure.entrypoints=websecure
+      - traefik.http.routers.sparkone-api-secure.rule=Host(`sparkone-ai.macspark.dev`)
+      - traefik.http.routers.sparkone-api-secure.tls=true
+      - traefik.http.routers.sparkone-api-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.sparkone-api-secure.service=sparkone-api
     restart: unless-stopped
     healthcheck:
       test:
@@ -92,19 +100,38 @@ services:
     networks:
     - sparkone-network
     restart: unless-stopped
+  db:
+    image: ankane/pgvector:v0.5.1  # PostgreSQL 16 with pgvector extension
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-sparkone}
+      - POSTGRES_USER=${POSTGRES_USER:-sparkone}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sparkone}
+    networks:
+      - sparkone-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-sparkone} -d ${POSTGRES_DB:-sparkone}
+      interval: 30s
+      timeout: 10s
+      retries: 5
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
-    - redis_data:/data
+      - redis_data:/data
     networks:
-    - sparkone-network
+      sparkone-network:
+        aliases:
+          - cache
     restart: unless-stopped
     healthcheck:
       test:
-      - CMD
-      - redis-cli
-      - ping
+        - CMD
+        - redis-cli
+        - ping
       interval: 30s
       timeout: 10s
       retries: 3
@@ -190,6 +217,7 @@ services:
     - traefik.http.routers.jaeger.middlewares=auth
     restart: unless-stopped
 volumes:
+  pgdata: null
   redis_data: null
   prometheus_data: null
   grafana_data: null

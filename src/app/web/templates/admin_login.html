@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SparkOne · Admin Login</title>
+    <link rel="icon" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <header class="panel__header">
+          <div class="header-container">
+            <div class="panel__header">
+              <div class="panel__eyebrow">SparkOne Admin</div>
+              <h1>Entrar no painel</h1>
+              {% if error %}
+              <div class="toast toast--error">{{ error }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </header>
+
+        <form method="post" action="/admin/login" class="composer">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <label class="composer__label" for="email">E-mail</label>
+          <input id="email" name="email" type="email" required class="input" />
+
+          <label class="composer__label" for="password">Senha</label>
+          <input id="password" name="password" type="password" required class="input" />
+
+          <label class="composer__label" for="totp">Token 2FA (se habilitado)</label>
+          <input id="totp" name="totp" inputmode="numeric" pattern="[0-9]*" class="input" />
+
+          <button type="submit" class="button button--primary">Acessar</button>
+        </form>
+      </section>
+    </main>
+  </body>
+  <style>
+    .input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--color-border-strong); background: rgba(15,23,42,0.6); color: var(--color-fg); }
+    .input:focus { outline: none; border-color: color-mix(in srgb, var(--color-primary) 75%, white); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent); }
+  </style>
+</html>

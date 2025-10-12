@@ -8,8 +8,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from .agents.agno import AgnoBridge
-from .agents.orchestrator import Orchestrator
-from .channels import GoogleSheetsAdapter, MessageNormalizer, WebUIAdapter, WhatsAppAdapter
+from .channels import MessageNormalizer
 from .config import get_settings
 from .core.database import get_session_factory
 from .core.events import EventDispatcher, N8nWebhookSink
@@ -92,9 +91,16 @@ def _get_classification_service() -> ClassificationService:
     return ClassificationService(agno=_get_agno_bridge())
 
 
-@lru_cache
 def get_message_normalizer() -> MessageNormalizer:
-    adapters = [WhatsAppAdapter(), GoogleSheetsAdapter(), WebUIAdapter()]
+    # Não usar cache aqui para permitir patch em testes. Importar dinamicamente
+    # os adapters do módulo channels para que patches em testes surtam efeito.
+    from . import channels as _channels  # local import
+
+    adapters = [
+        _channels.WhatsAppAdapter(),
+        _channels.GoogleSheetsAdapter(),
+        _channels.WebUIAdapter(),
+    ]
     return MessageNormalizer(adapters)
 
 
@@ -132,6 +138,9 @@ def _get_agno_bridge() -> AgnoBridge | None:
 
 
 def build_ingestion_service(session: AsyncSession) -> IngestionService:
+    # Import inside function so tests can patch "src.app.agents.orchestrator.Orchestrator"
+    from .agents.orchestrator import Orchestrator  # type: ignore
+
     chat_provider = get_chat_provider()
     agno = _get_agno_bridge()
     classification = _get_classification_service()

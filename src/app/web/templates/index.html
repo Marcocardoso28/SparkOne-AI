@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SparkOne · Entrada Multimodal</title>
+    <link rel="icon" href="/static/favicon.svg" />
     <link rel="stylesheet" href="/static/styles.css" />
     <script type="module" src="/static/app.js"></script>
   </head>
@@ -13,7 +14,7 @@
         <header class="panel__header">
           <div class="header-container">
             <div class="panel__header">
-                <div class="panel__eyebrow">SparkOne</div>
+                <div class="panel__eyebrow"><img alt="SparkOne" src="/static/logo.svg" style="height:28px;vertical-align:middle;"/></div>
                 <h1>Bem-vindo, {{ user.name }}!</h1>
                 <div class="panel__description">
                     Sua plataforma de IA está pronta para uso.
@@ -32,6 +33,8 @@
         {% elif error %}
         <div class="toast toast--error" role="alert">{{ error }}</div>
         {% endif %}
+
+        <p class="helper-text">Envie texto, voz ou imagens para iniciar uma conversa.</p>
 
         <form id="message-form" class="composer" method="post" action="/web/ingest" enctype="multipart/form-data">
           <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token }}" />
@@ -92,6 +95,7 @@
       </section>
 
       <aside class="sidebar">
+        <button id="theme-toggle" class="button button--ghost" type="button">🌓 Tema</button>
         <h2>Dicas rápidas</h2>
         <ul>
           <li>Grave notas curtas; o áudio é anexado ao registro da conversa.</li>
@@ -103,6 +107,13 @@
           <span class="tag">Limite upload: {{ (max_upload // 1024 // 1024) }}MB</span>
           <span class="tag">Canal: web</span>
         </div>
+        <hr/>
+        <h2>Recomendações</h2>
+        <form id="reco-form" class="composer" onsubmit="return false;">
+          <input type="text" id="reco-query" class="input" placeholder="Ex.: cafés, academias" />
+          <button id="reco-button" class="button">Buscar perto de mim</button>
+        </form>
+        <div id="reco-results" class="list"></div>
       </aside>
     </main>
   </body>

@@ -22,7 +22,14 @@ class ConversationMessage(TimestampMixin, Base):
     conversation_id: Mapped[str] = mapped_column(String(255), nullable=False)
     channel: Mapped[str] = mapped_column(String(50), nullable=False)
     sender: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[ConversationRole] = mapped_column(Enum(ConversationRole), nullable=False)
+    role: Mapped[ConversationRole] = mapped_column(
+        Enum(
+            ConversationRole,
+            name="conversation_role_enum",
+            values_callable=lambda e: [i.value for i in e],
+        ),
+        nullable=False,
+    )
     content: Mapped[str] = mapped_column(String, nullable=False)
 
 

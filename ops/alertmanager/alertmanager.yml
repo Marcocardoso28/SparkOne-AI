@@ -29,7 +29,10 @@ receivers:
           {{- range .Alerts }}
           <li><strong>Início:</strong> {{ .StartsAt }} — <strong>Labels:</strong> {{ .Labels }}</li>
           {{- end }}
-          </ul>
+        </ul>
+    webhook_configs:
+      - url: "http://api:8000/alerts/alertmanager"
+        send_resolved: true
   - name: "critical"
     email_configs:
       - to: "admin@yourdomain.com"
@@ -49,6 +52,9 @@ receivers:
           <li><strong>{{ .Labels.instance }}</strong> — {{ .Annotations.description }}</li>
           {{ end }}
           </ul>
+    webhook_configs:
+      - url: "http://api:8000/alerts/alertmanager"
+        send_resolved: true
 
 inhibit_rules:
   - source_matchers:

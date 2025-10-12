@@ -292,7 +292,7 @@ class SecurityLoggingMiddleware(BaseHTTPMiddleware):
                 endpoint=endpoint,
                 method=method,
                 details={"status_code": status_code},
-                severity="info",
+                severity="warning",
             )
 
         # Unauthorized access

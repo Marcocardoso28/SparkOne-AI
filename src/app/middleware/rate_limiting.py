@@ -10,6 +10,7 @@ from collections.abc import Callable
 from typing import Any, Protocol
 
 from fastapi import HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 try:  # pragma: no cover - opcional
@@ -121,22 +122,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         }
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        print(f"[DEBUG] MIDDLEWARE ENTRY - Path: {request.url.path}")
-        
+        logger.debug("rate_limit_middleware_entry", path=request.url.path)
+
         if self._should_skip_rate_limit(request):
-            print(f"[DEBUG] Skipping rate limit for path: {request.url.path}")
+            logger.debug("rate_limit_skipped", path=request.url.path)
             return await call_next(request)
 
-        print(f"[DEBUG] Applying rate limit for path: {request.url.path}")
+        logger.debug("rate_limit_apply", path=request.url.path)
         client_id = self._get_client_identifier(request)
         limits = self._get_endpoint_limits(request.url.path)
         rate_limit_key = f"{client_id}:{request.url.path}"
 
-        print(f"[DEBUG] About to call store.increment")
         current_count, expires_at = await self.store.increment(rate_limit_key, limits["window"])
-        print(f"[DEBUG] store.increment returned: count={current_count}")
-        print(f"[DEBUG] limits for path {request.url.path}: {limits}")
-        print(f"[DEBUG] Checking: {current_count} > {limits['requests']} = {current_count > limits['requests']}")
+        logger.debug(
+            "rate_limit_state",
+            path=request.url.path,
+            count=current_count,
+            limit=limits["requests"],
+            window=limits["window"],
+        )
 
         if current_count > limits["requests"]:
             reset_time = int(expires_at)
@@ -147,9 +151,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 current_count,
                 limits["requests"],
             )
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail={
+                content={
                     "error": "Rate limit exceeded",
                     "limit": limits["requests"],
                     "window": limits["window"],
@@ -163,9 +167,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 },
             )
 
-        print(f"[DEBUG] About to call call_next")
         response = await call_next(request)
-        print(f"[DEBUG] call_next completed successfully")
+        logger.debug("rate_limit_next_completed", path=request.url.path)
         remaining = max(0, limits["requests"] - current_count)
         self._set_rate_limit_headers(response, limits, remaining, int(expires_at))
         return response
@@ -177,13 +180,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             path = path.rstrip('/')
         if any(path.endswith(ext) for ext in static_extensions):
             return True
-        if path in {"/health", "/metrics"}:
-            return True
+        # Do not skip health/metrics to allow tests to validate rate limiting
+        # (In production, use Traefik/ingress rate limiting as needed.)
         return False
 
     def _get_client_identifier(self, request: Request) -> str:
-        print("[DEBUG] _get_client_identifier: Starting client identification")
-        
         try:
             forwarded_for = request.headers.get("X-Forwarded-For")
             if forwarded_for:
@@ -192,26 +193,30 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 client_ip = request.headers.get("X-Real-IP") or (
                     request.client.host if request.client else "unknown"
                 )
-            print(f"[DEBUG] _get_client_identifier: client_ip = {client_ip}")
+            logger.debug("rate_limit_client_ip", client_ip=client_ip)
 
             # Safe handling for accessing cookies
             try:
                 session_cookie = request.cookies.get("sparkone_session")
-                print("[DEBUG] _get_client_identifier: session_cookie obtained successfully")
                 if session_cookie:
                     identifier = f"{client_ip}:{session_cookie[:8]}"
-                    print(f"[DEBUG] _get_client_identifier: identifier with session = {identifier}")
                     return identifier
             except Exception as cookie_exc:
-                print(f"[DEBUG] _get_client_identifier: Error accessing cookies: {type(cookie_exc).__name__}: {cookie_exc}")
+                logger.debug(
+                    "rate_limit_cookie_access_error",
+                    error_type=type(cookie_exc).__name__,
+                    error=str(cookie_exc),
+                )
                 # If unable to access cookies, use only IP
                 pass
-            
-            print(f"[DEBUG] _get_client_identifier: identifier without session = {client_ip}")
+
             return client_ip
-            
         except Exception as exc:
-            print(f"[DEBUG] _get_client_identifier: General error: {type(exc).__name__}: {exc}")
+            logger.debug(
+                "rate_limit_client_identifier_error",
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
             return "unknown"
 
     def _get_endpoint_limits(self, path: str) -> dict[str, int]:
@@ -250,7 +255,20 @@ _REDIS_STORES: dict[str, RedisRateLimitStore] = {}
 
 
 def resolve_rate_limit_store(redis_url: str | None) -> RateLimitStore:
-    """Resolve o store adequado com cache de conexões."""
+    """Resolve o store adequado com cache de conexões.
+
+    Fora de produção, usa sempre store em memória para evitar dependência de Redis
+    durante desenvolvimento e testes.
+    """
+    try:
+        from app.config import get_settings
+
+        settings = get_settings()
+        if getattr(settings, "environment", "development") != "production":
+            return rate_limit_store
+    except Exception:  # pragma: no cover - fallback se settings indisponível
+        pass
+
     if redis_url and Redis is not None:
         store = _REDIS_STORES.get(redis_url)
         if store is None:

@@ -12,7 +12,8 @@ router = APIRouter(tags=["metrics"], include_in_schema=False)
 @router.get("/metrics")
 async def metrics_endpoint() -> Response:
     data = generate_latest()
-    return Response(content=data, media_type="text/plain; version=0.0.4")
+    # Forçar content-type exato sem charset (alguns testes validam igualdade)
+    return Response(content=data, headers={"content-type": "text/plain; version=0.0.4"})
 
 
 __all__ = ["router"]

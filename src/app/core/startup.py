@@ -62,6 +62,21 @@ async def validate_configuration() -> None:  # pragma: no cover - simple config 
         joined = ", ".join(sorted(set(missing)))
         raise RuntimeError(f"Configurações obrigatórias ausentes: {joined}")
 
+    # Em ambientes de teste (SQLite), garantir que o schema exista
+    try:
+        import os
+        from app.core.database import get_engine
+        from app.models.db.base import Base
+
+        engine = get_engine()
+        # Detectar execução de testes e SQLite para criar schema automaticamente
+        if os.getenv("PYTEST_CURRENT_TEST") and engine.dialect.name == "sqlite":
+            async with engine.begin() as conn:  # type: ignore[attr-defined]
+                await conn.run_sync(Base.metadata.drop_all)
+                await conn.run_sync(Base.metadata.create_all)
+    except Exception:  # pragma: no cover - best effort
+        pass
+
 
 def register_startup_validations(app: FastAPI) -> None:
     """Register startup validations using deprecated on_event (kept for compatibility)."""

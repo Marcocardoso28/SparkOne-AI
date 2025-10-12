@@ -36,6 +36,7 @@ class ChannelMessage(BaseModel):
     message_type: MessageType = MessageType.FREE_TEXT
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     extra_data: dict[str, Any] = Field(default_factory=dict)
+    external_id: str | None = None
 
 
 class HealthStatus(BaseModel):

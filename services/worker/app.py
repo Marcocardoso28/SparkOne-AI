@@ -60,6 +60,22 @@ notification_manager: NotificationManager | None = None
 event_monitor: EventMonitor | None = None
 
 
+def _get_scheduler() -> AsyncIOScheduler | None:
+    return scheduler or getattr(app, "scheduler", None)
+
+
+def _get_session_factory() -> async_sessionmaker[AsyncSession] | None:
+    return session_factory or getattr(app, "session_factory", None)
+
+
+def _get_notification_manager() -> NotificationManager | None:
+    return notification_manager or getattr(app, "notification_manager", None)
+
+
+def _get_event_monitor() -> EventMonitor | None:
+    return event_monitor or getattr(app, "event_monitor", None)
+
+
 @dataclass(slots=True)
 class JobResult:
     payload: dict[str, Any]
@@ -67,9 +83,12 @@ class JobResult:
 
 
 async def _execute_job(job_name: str, handler: JobHandler) -> JobResult:
-    assert scheduler is not None
-    assert event_monitor is not None
-    assert notification_manager is not None
+    _sched = _get_scheduler()
+    _monitor = _get_event_monitor()
+    _manager = _get_notification_manager()
+    assert _sched is not None
+    assert _monitor is not None
+    assert _manager is not None
 
     started_at = datetime.now(tz=TZ)
     scheduled_for = started_at
@@ -92,7 +111,7 @@ async def _execute_job(job_name: str, handler: JobHandler) -> JobResult:
         status = "failure"
         error = str(exc)
         try:
-            await notification_manager.enqueue_dlq(
+            await _manager.enqueue_dlq(
                 job_name=job_name,
                 payload=payload,
                 error=error,
@@ -101,7 +120,7 @@ async def _execute_job(job_name: str, handler: JobHandler) -> JobResult:
         except Exception as dlq_exc:  # pragma: no cover - defensive guard
             logger.error("worker_dlq_store_failed", job_name=job_name, error=str(dlq_exc))
         try:
-            await notification_manager.send_alert(
+            await _manager.send_alert(
                 job_name=job_name,
                 severity="critical",
                 message=f"Job {job_name} failed: {error}",
@@ -116,7 +135,7 @@ async def _execute_job(job_name: str, handler: JobHandler) -> JobResult:
         JOB_LATENCY.labels(job_name=job_name).observe(runtime_seconds)
         JOB_COUNT.labels(job_name=job_name, status=status).inc()
         try:
-            await event_monitor.record_job_event(
+            await _monitor.record_job_event(
                 job_name=job_name,
                 status=status,
                 runtime_seconds=runtime_seconds,
@@ -133,19 +152,24 @@ async def _execute_job(job_name: str, handler: JobHandler) -> JobResult:
 
 
 async def _events_job() -> dict[str, Any]:
-    assert session_factory is not None
-    assert notification_manager is not None
+    _factory = _get_session_factory()
+    _manager = _get_notification_manager()
+    assert _factory is not None
+    assert _manager is not None
 
-    async with session_factory() as session:
+    _EventRecord = getattr(app, "EventRecord", EventRecord)
+    _EventStatus = getattr(app, "EventStatus", EventStatus)
+
+    async with _factory() as session:
         now = datetime.now(tz=TZ)
         window_end = now + timedelta(minutes=60)
-        query: Select[tuple[EventRecord]] = select(EventRecord).where(
+        query: Select[tuple[_EventRecord]] = select(_EventRecord).where(
             and_(
-                EventRecord.status != EventStatus.CANCELLED,
-                EventRecord.start_at >= now,
-                EventRecord.start_at <= window_end,
+                _EventRecord.status != _EventStatus.CANCELLED,
+                _EventRecord.start_at >= now,
+                _EventRecord.start_at <= window_end,
             )
-        ).order_by(EventRecord.start_at)
+        ).order_by(_EventRecord.start_at)
         result = await session.execute(query)
         upcoming = result.scalars().all()
 
@@ -159,7 +183,7 @@ async def _events_job() -> dict[str, Any]:
             }
             for event in upcoming[:5]
         ]
-        deliveries = await notification_manager.send_alert(
+        deliveries = await _manager.send_alert(
             job_name="event-reminder",
             severity="info",
             message=f"{len(upcoming)} eventos nas próximas 60 minutos",
@@ -175,20 +199,25 @@ async def _events_job() -> dict[str, Any]:
 
 
 async def _tasks_job() -> dict[str, Any]:
-    assert session_factory is not None
-    assert notification_manager is not None
+    _factory = _get_session_factory()
+    _manager = _get_notification_manager()
+    assert _factory is not None
+    assert _manager is not None
 
-    async with session_factory() as session:
+    _TaskRecord = getattr(app, "TaskRecord", TaskRecord)
+    _TaskStatus = getattr(app, "TaskStatus", TaskStatus)
+
+    async with _factory() as session:
         now = datetime.now(tz=TZ)
         window_end = now + timedelta(minutes=90)
-        query: Select[tuple[TaskRecord]] = select(TaskRecord).where(
+        query: Select[tuple[_TaskRecord]] = select(_TaskRecord).where(
             and_(
-                TaskRecord.status != TaskStatus.DONE,
-                TaskRecord.due_at.isnot(None),
-                TaskRecord.due_at >= now,
-                TaskRecord.due_at <= window_end,
+                _TaskRecord.status != _TaskStatus.DONE,
+                _TaskRecord.due_at.isnot(None),
+                _TaskRecord.due_at >= now,
+                _TaskRecord.due_at <= window_end,
             )
-        ).order_by(TaskRecord.due_at)
+        ).order_by(_TaskRecord.due_at)
         result = await session.execute(query)
         due_tasks = result.scalars().all()
 
@@ -202,7 +231,7 @@ async def _tasks_job() -> dict[str, Any]:
             }
             for task in due_tasks[:5]
         ]
-        deliveries = await notification_manager.send_alert(
+        deliveries = await _manager.send_alert(
             job_name="task-reminder",
             severity="warning",
             message=f"{len(due_tasks)} tarefas vencem em até 90 minutos",
@@ -226,9 +255,10 @@ async def run_task_reminder() -> JobResult:
 
 
 async def _dlq_job() -> dict[str, Any]:
-    assert notification_manager is not None
+    _manager = _get_notification_manager()
+    assert _manager is not None
 
-    result = await notification_manager.reprocess_dlq(limit=25)
+    result = await _manager.reprocess_dlq(limit=25)
     return {
         "alerts_dispatched": bool(result["success"]),
         "attempted": result["attempted"],
@@ -316,3 +346,18 @@ async def metrics() -> Response:
 
 
 __all__ = ["app", "run_event_reminder", "run_task_reminder", "run_dlq_recovery"]
+
+# Expose internals on the FastAPI app object for tests that import
+# `services.worker.app as worker_app` and expect module-level attributes.
+setattr(app, "scheduler", scheduler)
+setattr(app, "session_factory", session_factory)
+setattr(app, "notification_manager", notification_manager)
+setattr(app, "event_monitor", event_monitor)
+setattr(app, "EventRecord", EventRecord)
+setattr(app, "EventStatus", EventStatus)
+setattr(app, "TaskRecord", TaskRecord)
+setattr(app, "TaskStatus", TaskStatus)
+setattr(app, "TZ", TZ)
+setattr(app, "run_event_reminder", run_event_reminder)
+setattr(app, "run_task_reminder", run_task_reminder)
+setattr(app, "run_dlq_recovery", run_dlq_recovery)

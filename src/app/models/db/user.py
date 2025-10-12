@@ -22,6 +22,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
 
     # 2FA fields
     two_factor_enabled = Column(Boolean, default=False, nullable=False)
@@ -49,6 +50,7 @@ class User(Base):
             "email": self.email,
             "is_active": self.is_active,
             "is_verified": self.is_verified,
+            "is_admin": self.is_admin,
             "two_factor_enabled": self.two_factor_enabled,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

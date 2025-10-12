@@ -340,3 +340,73 @@ window.addEventListener('beforeunload', () => {
   }
   stopDictation();
 });
+
+// Theme toggle and recommendations
+(function initEnhancements() {
+  const themeToggle = document.getElementById('theme-toggle');
+  const recoButton = document.getElementById('reco-button');
+  const recoQuery = document.getElementById('reco-query');
+  const recoResults = document.getElementById('reco-results');
+
+  if (themeToggle) {
+    const saved = localStorage.getItem('sparkone-theme');
+    if (saved === 'light') document.body.setAttribute('data-theme', 'light');
+    themeToggle.addEventListener('click', () => {
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.body.removeAttribute('data-theme');
+        localStorage.removeItem('sparkone-theme');
+      } else {
+        document.body.setAttribute('data-theme', 'light');
+        localStorage.setItem('sparkone-theme', 'light');
+      }
+    });
+  }
+
+  const renderPlaces = (payload) => {
+    if (!recoResults) return;
+    recoResults.innerHTML = '';
+    if (!payload || !payload.items || !payload.items.length) {
+      const msg = document.createElement('div');
+      msg.className = 'status';
+      msg.textContent = payload && payload.message ? payload.message : 'Nenhum resultado encontrado.';
+      recoResults.appendChild(msg);
+      return;
+    }
+    for (const p of payload.items) {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `<div><strong>${p.name || 'Local'}</strong><br/><small>${p.address || ''}</small></div><div><small>${p.rating ? '⭐ ' + p.rating : ''}</small></div>`;
+      recoResults.appendChild(item);
+    }
+  };
+
+  const fetchPlaces = async (query, coords) => {
+    const params = new URLSearchParams({ q: query || '' });
+    if (coords) {
+      params.set('lat', coords.latitude);
+      params.set('lng', coords.longitude);
+    }
+    const res = await fetch(`/recommendations/places?${params.toString()}`);
+    renderPlaces(await res.json());
+  };
+
+  if (recoButton && recoQuery) {
+    recoButton.addEventListener('click', async () => {
+      setStatus('Buscando recomendações...');
+      const q = recoQuery.value || 'cafés';
+      const coords = await new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition((pos) => resolve(pos.coords), () => resolve(null), { enableHighAccuracy: true, timeout: 4000 });
+      });
+      try {
+        await fetchPlaces(q, coords);
+      } catch (e) {
+        console.error(e);
+        renderPlaces({ items: [], message: 'Erro ao buscar recomendações.' });
+      } finally {
+        resetStatus();
+      }
+    });
+  }
+})();

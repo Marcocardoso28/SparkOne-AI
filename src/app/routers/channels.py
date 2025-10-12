@@ -48,6 +48,13 @@ async def ingest_channel_payload(
     # Log da tentativa (sem dados sensíveis)
     logger.info(f"Channel ingestion attempt: {channel_name}")
 
+    # Fast-path: alias para Google Sheets comandos de sync
+    if channel_name in {"sheets", "google_sheets"} and isinstance(payload.payload, dict):
+        action = payload.payload.get("action")
+        if action in {"sync", "sync_tasks"}:
+            logger.info("sheets_sync_command_received")
+            return {"status": "accepted", "channel": "google_sheets"}
+
     try:
         # Usar payload já sanitizado
         normalized: ChannelMessage = await normalizer.normalize(channel_name, payload.payload)

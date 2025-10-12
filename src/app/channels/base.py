@@ -27,7 +27,14 @@ class MessageNormalizer:
         self._registry = {adapter.channel_name: adapter for adapter in adapters}
 
     async def normalize(self, channel_name: str, payload: dict[str, Any]) -> ChannelMessage:
-        adapter = self._registry.get(channel_name)
+        # Aliases comuns
+        aliases = {
+            "sheets": "google_sheets",
+            "sheet": "google_sheets",
+            "wa": "whatsapp",
+        }
+        channel_key = aliases.get(channel_name, channel_name)
+        adapter = self._registry.get(channel_key)
         if adapter is None:
             raise ChannelNotRegisteredError(f"Channel '{channel_name}' is not configured")
         return await adapter.normalize(payload)

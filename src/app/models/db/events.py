@@ -26,7 +26,13 @@ class EventRecord(TimestampMixin, Base):
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[EventStatus] = mapped_column(
-        Enum(EventStatus), default=EventStatus.CONFIRMED, nullable=False
+        Enum(
+            EventStatus,
+            name="event_status_enum",
+            values_callable=lambda e: [i.value for i in e],
+        ),
+        default=EventStatus.CONFIRMED,
+        nullable=False,
     )
     location: Mapped[str | None] = mapped_column(String(255))
     external_id: Mapped[str | None] = mapped_column(String(255))

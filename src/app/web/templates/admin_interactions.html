@@ -1,0 +1,51 @@
+{% set title = 'Interações Recentes' %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SparkOne · {{ title }}</title>
+    <link rel="icon" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <header class="panel__header header-container">
+          <div>
+            <div class="panel__eyebrow">SparkOne</div>
+            <h1>{{ title }}</h1>
+          </div>
+          <nav>
+            <a class="button" href="/admin">Início</a>
+            <a class="button" href="/admin/users">Usuários</a>
+            <a class="button button--ghost" href="/admin/logout">Sair</a>
+          </nav>
+        </header>
+        <div class="list">
+          {% if conversations %}
+            {% for m in conversations %}
+            <div class="list-item">
+              <div>
+                <div class="conversation-message__header">
+                  <span class="conversation-message__role">{{ m.role }}</span>
+                  <span class="conversation-message__time">{{ m.created_at }}</span>
+                </div>
+                <div class="conversation-message__content">{{ m.content }}</div>
+              </div>
+              <div class="tag">{{ m.channel }}</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="status">Sem interações recentes.</div>
+          {% endif %}
+        </div>
+      </section>
+    </main>
+  </body>
+  <style>
+    .list { display: flex; flex-direction: column; gap: 12px; }
+    .list-item { display: flex; justify-content: space-between; border: 1px solid var(--color-border-strong); padding: 12px 16px; border-radius: 12px; background: rgba(15,23,42,0.5); }
+  </style>
+</html>
+

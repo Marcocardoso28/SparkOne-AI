@@ -1,0 +1,33 @@
+{% set title = 'Painel Administrativo' %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SparkOne · {{ title }}</title>
+    <link rel="icon" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <header class="panel__header header-container">
+          <div>
+            <div class="panel__eyebrow">SparkOne</div>
+            <h1>{{ title }}</h1>
+            <div class="panel__description">Gerencie usuários e visualize interações.</div>
+          </div>
+          <nav>
+            <a class="button" href="/admin/users">Usuários</a>
+            <a class="button" href="/admin/interactions">Interações</a>
+            <a class="button" href="/admin/password">Minha Senha</a>
+            <a class="button" href="/admin/2fa/setup">2FA</a>
+            <a class="button button--ghost" href="/admin/logout">Sair</a>
+          </nav>
+        </header>
+
+        <div class="status">Selecione uma opção no topo.</div>
+      </section>
+    </main>
+  </body>
+</html>
