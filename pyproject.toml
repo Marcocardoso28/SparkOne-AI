@@ -81,7 +81,7 @@ docstring-code-format = true
 
 [tool.pytest.ini_options]
 addopts = "-q --cov=src/app --cov-report=term-missing --cov-report=xml --cov-fail-under=60"
-testpaths = ["src/app/tests", "tests"]
+testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
 
@@ -95,4 +95,6 @@ mypy_path = "src"
 exclude = [
     "venv/",
     "tests/fixtures/",
+    "data/",
+    ".temp/",
 ]

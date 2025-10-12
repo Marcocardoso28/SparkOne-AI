@@ -5,7 +5,7 @@ from __future__ import annotations
 import structlog
 
 from app.models.schemas import ChannelMessage, MessageType
-from app.providers.chat import ChatProviderRouter, LLMGenerationError
+from app.infrastructure.chat import ChatProviderRouter, LLMGenerationError
 
 from .prompts.orchestrator import CLASSIFICATION_PROMPT, RESPONSE_PROMPT, SYSTEM_PROMPT
 from .tools.parser import safe_json_loads
@@ -41,7 +41,8 @@ class AgnoBridge:
             return MessageType.UNKNOWN, summary
 
     async def respond(self, *, category: MessageType, summary: str) -> str:
-        prompt = RESPONSE_PROMPT.format(category=category.value, summary=summary)
+        prompt = RESPONSE_PROMPT.format(
+            category=category.value, summary=summary)
         try:
             response = await self._chat.generate(
                 messages=[
@@ -52,7 +53,8 @@ class AgnoBridge:
                 task_type="smart",  # Usa modelo inteligente para respostas
             )
         except LLMGenerationError as exc:
-            self._logger.warning("agno_response_failed", error=str(exc), category=category.value)
+            self._logger.warning("agno_response_failed",
+                                 error=str(exc), category=category.value)
             return "Não consegui gerar uma resposta no momento."
         return response
 

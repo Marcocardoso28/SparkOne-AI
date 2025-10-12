@@ -1,140 +1,191 @@
-# Roadmap do SparkOne
+# SparkOne - Roadmap de Produção
 
 ## Visão Geral
-Este roadmap define a evolução do SparkOne, um assistente de IA especializado estilo Iron Man, focado em produtividade pessoal e automação inteligente.
 
----
+Este documento apresenta o roadmap completo para levar o SparkOne de MVP para uma solução de produção robusta e escalável.
 
-## 🚀 Curto Prazo (Próximas 2-4 semanas)
+## Status Atual (v1.1.0)
 
-### Infraestrutura e Operações
-- **SMTP real em staging**: Configurar credenciais seguras e executar teste end-to-end de fallback
-- **Smoke tests estendidos**: Adicionar `curl /brief/text` e `/tasks` pós-deploy
-- **Dashboard Grafana**: Importar `ops/grafana/dashboard-overview.json`, ajustar thresholds e publicar screenshot para referência
+✅ **Concluído**
+- Arquitetura base implementada
+- API REST funcional
+- Autenticação e 2FA
+- Integração WhatsApp via Evolution API
+- Sincronização com Notion e Google Calendar
+- Interface web básica
+- Sistema de observabilidade
+- Testes automatizados
+- Documentação completa
+- Deploy com Docker
 
-### Melhorias de Segurança
-- **Validação de entrada**: Implementar sanitização robusta em todos os endpoints
-- **Rate limiting**: Configurar limites por IP e por usuário
-- **Headers de segurança**: Validar implementação completa do SecurityHeadersMiddleware
+## Roadmap 2025
 
-### Qualidade de Código
-- **Cobertura de testes**: Atingir 85%+ de cobertura nos módulos críticos
-- **Documentação API**: Completar docstrings em todos os endpoints
-- **Type hints**: Garantir 100% de cobertura de tipos
+### Q1 2025 - Estabilização e Otimização
 
----
+#### Janeiro
+- [ ] **Performance**: Otimização de queries e cache
+- [ ] **Segurança**: Implementação de OAuth2 + MFA
+- [ ] **Monitoramento**: Dashboards avançados no Grafana
+- [ ] **Backups**: Automação completa de backup/restore
 
-## 📈 Médio Prazo (1-3 meses)
+#### Fevereiro
+- [ ] **Escalabilidade**: Implementação de rate limiting avançado
+- [ ] **Observabilidade**: Tracing distribuído com OpenTelemetry
+- [ ] **Testes**: Cobertura de testes >90%
+- [ ] **CI/CD**: Pipeline completo de deploy
 
-### Integrações Avançadas
-- **Integração Evolution→Alertmanager**: Permitir que Alertmanager chame `/alerts/alertmanager` diretamente
-- **Google Sheets bidireccional**: Implementar sincronização completa de tarefas
-- **Calendário CalDAV**: Suporte a provedores além do Google Calendar
+#### Março
+- [ ] **Integração**: Suporte a mais provedores de LLM
+- [ ] **UI/UX**: Interface web melhorada
+- [ ] **Documentação**: Guias de usuário
+- [ ] **Suporte**: Sistema de tickets
 
-### Automação e IA
-- **Testes E2E automatizados**: Fluxo completo WhatsApp→ingestão→task/event→brief
-- **Classificação inteligente**: Melhorar precisão do classificador de mensagens
-- **Recomendações contextuais**: Sistema de sugestões baseado em histórico
+### Q2 2025 - Funcionalidades Avançadas
 
-### Operações
-- **Backup restoration drills**: Automatizar execução de `ops/verify_backup.sh` semanalmente
-- **Monitoramento proativo**: Alertas inteligentes baseados em padrões de uso
-- **Deploy automatizado**: Pipeline CI/CD completo com rollback automático
+#### Abril
+- [ ] **IA**: Migração para LangGraph
+- [ ] **Agentes**: Agentes especializados por domínio
+- [ ] **Memória**: Sistema de memória persistente
+- [ ] **Personalização**: Perfis de usuário customizáveis
 
----
+#### Maio
+- [ ] **Integração**: Suporte a mais canais (Telegram, Slack)
+- [ ] **Automação**: Workflows personalizáveis
+- [ ] **Analytics**: Dashboard de uso e métricas
+- [ ] **API**: Versionamento e depreciação
 
-## 🎯 Longo Prazo (3-6 meses)
+#### Junho
+- [ ] **Multi-tenant**: Suporte a múltiplos usuários
+- [ ] **Escalabilidade**: Arquitetura de microserviços
+- [ ] **Performance**: Cache distribuído
+- [ ] **Segurança**: Auditoria completa
 
-### Arquitetura Multiagente
-- **Migração para LangGraph**: Implementar handoffs inteligentes entre agentes
-- **Agentes especializados**: Personal Coach, Calendar Manager, Task Optimizer
-- **Estado compartilhado**: Memória persistente entre sessões
+### Q3 2025 - Expansão e Integração
 
-### Observabilidade Avançada
-- **Dashboards especializados**: Painéis para desempenho, integrações e uso
-- **Tracing distribuído**: OpenTelemetry para rastreamento de requests
-- **Centralização de logs**: Stack ELK/Loki para análise avançada
+#### Julho
+- [ ] **Integração**: APIs de terceiros (CRM, ERP)
+- [ ] **Mobile**: Aplicativo móvel
+- [ ] **Offline**: Funcionalidade offline
+- [ ] **Sincronização**: Sincronização em tempo real
 
-### Segurança e Compliance
-- **OAuth2 + MFA**: Autenticação robusta para Web UI
-- **mTLS entre serviços**: Comunicação segura interna
-- **Auditoria LGPD**: Revisão completa de privacidade e proteção de dados
-- **Penetration testing**: Testes de segurança por terceiros
+#### Agosto
+- [ ] **IA**: Modelos customizados
+- [ ] **Aprendizado**: Sistema de aprendizado contínuo
+- [ ] **Predição**: Funcionalidades preditivas
+- [ ] **Recomendações**: Sistema de recomendações
 
----
+#### Setembro
+- [ ] **Colaboração**: Recursos de colaboração
+- [ ] **Compartilhamento**: Compartilhamento de dados
+- [ ] **Governança**: Políticas de governança
+- [ ] **Compliance**: Conformidade regulatória
 
-## 🔮 Visão Futura (6+ meses)
+### Q4 2025 - Inovação e Escala
 
-### Escalabilidade
-- **Arquitetura distribuída**: Microserviços com Kubernetes
-- **Cache inteligente**: Redis Cluster com estratégias avançadas
-- **Banco vetorial dedicado**: Migração para Qdrant para performance
+#### Outubro
+- [ ] **Edge**: Computação edge
+- [ ] **IoT**: Integração com dispositivos IoT
+- [ ] **Blockchain**: Integração com blockchain
+- [ ] **AR/VR**: Suporte a realidade aumentada
 
-### Inteligência Artificial
-- **Modelos locais**: Suporte a Llama, Mistral e outros LLMs open-source
-- **Fine-tuning**: Modelos especializados para domínios específicos
-- **Multimodalidade**: Processamento de imagens, áudio e documentos
+#### Novembro
+- [ ] **Globalização**: Suporte multi-idioma
+- [ ] **Localização**: Adaptação cultural
+- [ ] **Acessibilidade**: Recursos de acessibilidade
+- [ ] **Inclusão**: Design inclusivo
 
-### Experiência do Usuário
-- **Interface mobile**: App nativo para iOS/Android
-- **Comandos de voz**: Integração com assistentes de voz
-- **AR/VR**: Interface imersiva estilo Iron Man
+#### Dezembro
+- [ ] **Futuro**: Planejamento 2026
+- [ ] **Inovação**: Pesquisa e desenvolvimento
+- [ ] **Parcerias**: Parcerias estratégicas
+- [ ] **Crescimento**: Estratégia de crescimento
 
----
+## Marcos Principais
 
-## 📊 Métricas de Sucesso
+### M1: Produção Estável (Março 2025)
+- Sistema estável em produção
+- Performance otimizada
+- Segurança robusta
+- Monitoramento completo
+
+### M2: Funcionalidades Avançadas (Junho 2025)
+- IA avançada com LangGraph
+- Agentes especializados
+- Memória persistente
+- Multi-tenant
+
+### M3: Expansão (Setembro 2025)
+- Integrações avançadas
+- Aplicativo móvel
+- Recursos de colaboração
+- Compliance completo
+
+### M4: Inovação (Dezembro 2025)
+- Tecnologias emergentes
+- Globalização
+- Escala global
+- Preparação para 2026
+
+## Métricas de Sucesso
 
 ### Técnicas
-- **Uptime**: 99.9%+ de disponibilidade
-- **Latência**: <200ms para 95% dos requests
-- **Cobertura de testes**: 90%+ em todos os módulos
+- **Uptime**: >99.9%
+- **Performance**: <100ms response time
+- **Escalabilidade**: 10k+ usuários simultâneos
+- **Disponibilidade**: 24/7
 
-### Produto
-- **Tempo de resposta**: <5s para análise de contexto
-- **Precisão**: 95%+ na classificação de mensagens
-- **Satisfação**: NPS 8+ dos usuários
+### Negócio
+- **Adoção**: 1000+ usuários ativos
+- **Retenção**: >80% retenção mensal
+- **Satisfação**: >4.5/5 rating
+- **Crescimento**: 20% crescimento mensal
 
-### Operacionais
-- **MTTR**: <15min para incidentes críticos
-- **Deploy frequency**: Múltiplos deploys por dia
-- **Change failure rate**: <5%
+### Qualidade
+- **Testes**: >90% cobertura
+- **Bugs**: <1% taxa de erro
+- **Segurança**: 0 vulnerabilidades críticas
+- **Documentação**: 100% documentado
 
----
-
-## 🛠️ Dependências e Riscos
-
-### Dependências Externas
-- **Evolution API**: Estabilidade da integração WhatsApp
-- **Notion API**: Rate limits e disponibilidade
-- **OpenAI API**: Custos e limites de uso
+## Riscos e Mitigações
 
 ### Riscos Técnicos
-- **Vendor lock-in**: Dependência de serviços proprietários
-- **Escalabilidade**: Limitações do PostgreSQL para vetores
-- **Segurança**: Exposição de dados sensíveis
+- **Escalabilidade**: Arquitetura de microserviços
+- **Performance**: Cache distribuído
+- **Disponibilidade**: Redundância e failover
+- **Segurança**: Auditoria contínua
 
-### Mitigações
-- **Abstrações**: Interfaces para facilitar migração de provedores
-- **Fallbacks**: Sistemas de backup para serviços críticos
-- **Monitoramento**: Alertas proativos para problemas
+### Riscos de Negócio
+- **Adoção**: Marketing e onboarding
+- **Competição**: Diferenciação e inovação
+- **Regulamentação**: Compliance proativo
+- **Recursos**: Planejamento de capacidade
+
+## Recursos Necessários
+
+### Humanos
+- **Desenvolvedores**: 5-10 desenvolvedores
+- **DevOps**: 2-3 engenheiros DevOps
+- **QA**: 2-3 testadores
+- **Product**: 1-2 product managers
+
+### Tecnológicos
+- **Infraestrutura**: Cloud providers
+- **Ferramentas**: CI/CD, monitoramento
+- **Licenças**: Software e serviços
+- **Hardware**: Desenvolvimento e teste
+
+### Financeiros
+- **Desenvolvimento**: R$ 500k - R$ 1M
+- **Infraestrutura**: R$ 50k - R$ 100k/ano
+- **Marketing**: R$ 100k - R$ 200k
+- **Operações**: R$ 200k - R$ 400k/ano
+
+## Conclusão
+
+Este roadmap apresenta uma visão clara e realista para levar o SparkOne de MVP para uma solução de produção de classe mundial. O foco está em estabilização, otimização e expansão gradual das funcionalidades.
 
 ---
 
-## 📝 Notas de Implementação
-
-### Priorização
-1. **Segurança e estabilidade** sempre primeiro
-2. **Funcionalidades core** antes de features avançadas
-3. **Experiência do usuário** como diferencial competitivo
-
-### Critérios de Aceitação
-- Todos os PRs devem passar nos testes automatizados
-- Cobertura de testes não pode diminuir
-- Performance não pode regredir >10%
-- Documentação deve ser atualizada junto com o código
-
-### Revisão do Roadmap
-- **Semanal**: Ajustes de prioridade e escopo
-- **Mensal**: Revisão de métricas e objetivos
-- **Trimestral**: Avaliação estratégica e pivots
-
+**Última Atualização**: Janeiro 2025  
+**Versão**: v1.1.0  
+**Próxima Revisão**: Março 2025

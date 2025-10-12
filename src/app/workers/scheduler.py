@@ -19,11 +19,11 @@ from app.core.metrics import (
     WHATSAPP_NOTIFICATION_COUNTER,
 )
 from app.dependencies import build_ingestion_service, get_message_normalizer, get_whatsapp_service
-from app.integrations.google_sheets import GoogleSheetsClient
-from app.providers.chat import ChatProviderRouter
-from app.services.brief import BriefService
-from app.services.email import send_email
-from app.services.google_sheets_sync import GoogleSheetsSyncService
+from app.infrastructure.integrations.google_sheets import GoogleSheetsClient
+from app.infrastructure.chat import ChatProviderRouter
+from app.domain.services.brief import BriefService
+from app.domain.services.email import send_email
+from app.domain.services.google_sheets_sync import GoogleSheetsSyncService
 
 logger = structlog.get_logger(__name__)
 
@@ -39,7 +39,8 @@ async def daily_brief_job() -> None:
     chat_provider = _get_chat_provider()
     session_factory = get_session_factory()
     async with session_factory() as session:
-        brief_service = BriefService(session=session, chat_provider=chat_provider)
+        brief_service = BriefService(
+            session=session, chat_provider=chat_provider)
         try:
             content = await brief_service.textual_brief()
             await session.commit()
@@ -100,7 +101,8 @@ async def _notify_whatsapp(message: str) -> None:
 
     whatsapp_service = get_whatsapp_service()
     if whatsapp_service is None:
-        logger.debug("whatsapp_notification_skipped", reason="service not configured")
+        logger.debug("whatsapp_notification_skipped",
+                     reason="service not configured")
         return
 
     numbers = [num.strip() for num in numbers_raw.split(",") if num.strip()]
@@ -110,7 +112,8 @@ async def _notify_whatsapp(message: str) -> None:
             WHATSAPP_NOTIFICATION_COUNTER.labels(status="success").inc()
         except Exception as exc:  # pragma: no cover - external failure path
             WHATSAPP_NOTIFICATION_COUNTER.labels(status="failure").inc()
-            logger.warning("whatsapp_notification_failed", number=number, error=str(exc))
+            logger.warning("whatsapp_notification_failed",
+                           number=number, error=str(exc))
             await _fallback_notification(message)
 
 
@@ -121,7 +124,8 @@ async def _fallback_notification(message: str) -> None:
         return
     FALLBACK_NOTIFICATION_COUNTER.labels(status="sent").inc()
     await send_email("SparkOne Alerta", message)
-    logger.info("fallback_notification", email=email, message_preview=message[:120])
+    logger.info("fallback_notification", email=email,
+                message_preview=message[:120])
 
 
 async def main() -> None:
@@ -131,7 +135,8 @@ async def main() -> None:
     scheduler = AsyncIOScheduler(timezone=ZoneInfo(settings.timezone))
     scheduler.add_job(
         daily_brief_job,
-        trigger=CronTrigger(hour=7, minute=30, timezone=ZoneInfo(settings.timezone)),
+        trigger=CronTrigger(hour=7, minute=30,
+                            timezone=ZoneInfo(settings.timezone)),
         id="daily-brief",
         replace_existing=True,
         misfire_grace_time=300,
@@ -141,7 +146,8 @@ async def main() -> None:
 
     scheduler.add_job(
         sheets_sync_job,
-        trigger=IntervalTrigger(minutes=5, timezone=ZoneInfo(settings.timezone)),
+        trigger=IntervalTrigger(
+            minutes=5, timezone=ZoneInfo(settings.timezone)),
         id="sheets-sync",
         replace_existing=True,
         misfire_grace_time=120,

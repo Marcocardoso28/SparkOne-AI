@@ -147,8 +147,48 @@ Esta seção padroniza os IDs para RF-xxx (funcionais) e RNF-xxx (não funcionai
 #### 3.2.4 Sistema de Brief
 - **RF-011:** Brief estruturado diário
   - **Status:** ✅ Implementado
-  - **Endpoint:** `/brief/structured`
-  - **Critérios de Aceitação:** JSON com contagem de tarefas/eventos; 2xx
+
+### 3.3 Gestão de Technical Debt
+
+#### 3.3.1 Bugs Críticos
+- **BUG-001:** Melhoria do tratamento de erros da Evolution API
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P0
+  - **Arquivo:** `src/app/integrations/evolution_api.py`
+  - **Critérios de Aceitação:** Retry logic, circuit breaker, error logging detalhado
+
+- **BUG-002:** Resolver condições de corrida na sincronização Notion
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P1
+  - **Arquivo:** `src/app/services/tasks.py`
+  - **Critérios de Aceitação:** Locks apropriados, transações atômicas, conflict resolution
+
+- **BUG-003:** Corrigir problemas de timezone em eventos
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P1
+  - **Arquivo:** `src/app/services/calendar.py`
+  - **Critérios de Aceitação:** Timezone correto, DST handling, user timezone preference
+
+#### 3.3.2 Melhorias Técnicas
+- **TECH-001:** Refatorar arquivos com mais de 300 linhas
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P0
+  - **Critérios de Aceitação:** Arquivos < 300 linhas, responsabilidade única, testabilidade
+
+- **TECH-002:** Adicionar testes unitários para serviços críticos
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P1
+  - **Critérios de Aceitação:** Cobertura > 80%, testes de integração, CI/CD pipeline
+
+- **TECH-003:** Melhorar documentação da API com exemplos
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P1
+  - **Critérios de Aceitação:** Exemplos completos, error responses, authentication docs
+
+- **TECH-004:** Melhorar qualidade do código com linting rigoroso
+  - **Status:** 🔄 Planejado
+  - **Prioridade:** P2
+  - **Critérios de Aceitação:** Linting score > 9.0, type hints 100%, docstrings completas
 
 - **RF-012:** Brief textual personalizado
   - **Status:** ✅ Implementado
@@ -589,6 +629,99 @@ O SparkOne representa um sistema de assistente pessoal bem arquitetado com funda
 
 ---
 
+## 8. Timeline e Marcos
+
+### 8.1 Roadmap de Desenvolvimento
+
+#### **Q1 2025 - Estabilização (Jan-Mar)**
+- **Jan 2025:** ✅ Infraestrutura base completa
+- **Fev 2025:** ProactivityEngine e Worker Container
+- **Mar 2025:** Migração para Agno Library
+
+#### **Q2 2025 - Expansão (Abr-Jun)**
+- **Abr 2025:** RecommendationService (Google Places)
+- **Mai 2025:** Vector Search Implementation
+- **Jun 2025:** JWT Authentication
+
+#### **Q3 2025 - Otimização (Jul-Set)**
+- **Jul 2025:** Advanced Analytics Dashboard
+- **Ago 2025:** Multi-tenant Support
+- **Set 2025:** Performance Optimization
+
+### 8.2 Marcos Críticos
+
+| Marco | Data | Entregáveis | Critérios de Sucesso |
+|-------|------|-------------|---------------------|
+| **MVP Production Ready** | Fev 2025 | ProactivityEngine funcional | Brief automático às 8h, lembretes contextuais |
+| **Full Feature Set** | Jun 2025 | Todos os RF P0 implementados | 100% dos requisitos funcionais |
+| **Enterprise Ready** | Set 2025 | Multi-tenant + Analytics | Suporte a múltiplos usuários |
+
+---
+
+## 9. Análise de Riscos
+
+### 9.1 Riscos Técnicos
+
+#### **🔴 Alto Risco**
+- **Risco:** Dependência do Agno Library
+  - **Probabilidade:** Média (30%)
+  - **Impacto:** Alto (atraso de 2-3 meses)
+  - **Mitigação:** Manter AgnoBridge como fallback, roadmap alternativo
+
+- **Risco:** Complexidade de integração WhatsApp
+  - **Probabilidade:** Baixa (15%)
+  - **Impacto:** Alto (perda de funcionalidade principal)
+  - **Mitigação:** Testes extensivos, documentação da Evolution API
+
+#### **🟡 Médio Risco**
+- **Risco:** Performance com volume alto
+  - **Probabilidade:** Média (40%)
+  - **Impacto:** Médio (degradação de UX)
+  - **Mitigação:** Profiling contínuo, otimização de queries
+
+### 9.2 Riscos de Negócio
+
+#### **🟡 Médio Risco**
+- **Risco:** Mudança de requisitos do usuário
+  - **Probabilidade:** Alta (60%)
+  - **Impacto:** Médio (retrabalho)
+  - **Mitigação:** Feedback contínuo, iterações rápidas
+
+#### **🟢 Baixo Risco**
+- **Risco:** Competição no mercado
+  - **Probabilidade:** Baixa (20%)
+  - **Impacto:** Baixo (diferenciação via personalização)
+  - **Mitigação:** Foco em nicho específico, inovação contínua
+
+### 9.3 Plano de Contingência
+
+1. **Fallback para AgnoBridge** se Agno Library não estiver pronto
+2. **Implementação gradual** de funcionalidades complexas
+3. **Monitoramento proativo** de performance e estabilidade
+4. **Backup de dados** automatizado e testado
+
+---
+
+## 10. Orçamento e Recursos
+
+### 10.1 Recursos Humanos
+- **Desenvolvedor Sênior:** 1.0 FTE (desenvolvimento principal)
+- **DevOps Engineer:** 0.5 FTE (infraestrutura e deploy)
+- **QA Engineer:** 0.3 FTE (testes e validação)
+
+### 10.2 Recursos Técnicos
+- **Servidor de Desenvolvimento:** $100/mês
+- **Banco de Dados Produção:** $200/mês
+- **APIs Externas:** $150/mês (Google, Notion, Eventbrite)
+- **Monitoramento:** $50/mês (Grafana Cloud)
+
+### 10.3 Orçamento Total Estimado
+- **Q1 2025:** $15,000 (desenvolvimento + infraestrutura)
+- **Q2 2025:** $12,000 (expansão de features)
+- **Q3 2025:** $10,000 (otimização e polish)
+
+---
+
 **Documento Gerado:** Janeiro 2025
 **Público-Alvo:** Sistemas de IA, Análise Automatizada, Equipes Técnicas
-**Versão:** 1.0
+**Versão:** 1.1

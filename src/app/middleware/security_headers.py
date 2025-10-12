@@ -41,8 +41,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "payment=(), "
                 "usb=(), "
                 "magnetometer=(), "
-                "gyroscope=(), "
-                "speaker=()"
+                "gyroscope=()"
             ),
             "Cross-Origin-Opener-Policy": "same-origin",
             "Cross-Origin-Embedder-Policy": "require-corp",
@@ -105,7 +104,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 directives.append("includeSubDomains")
             if self._hsts_preload:
                 directives.append("preload")
-            response.headers.setdefault("Strict-Transport-Security", "; ".join(directives))
+            response.headers.setdefault(
+                "Strict-Transport-Security", "; ".join(directives))
 
         # Headers específicos para endpoints sem cache
         if request.url.path in self.no_cache_endpoints:
@@ -116,12 +116,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Headers específicos para API endpoints
         if request.url.path.startswith(("/api/", "/ingest", "/channels/", "/webhooks/")):
             response.headers["X-Robots-Tag"] = "noindex, nofollow"
-            response.headers.setdefault("Cache-Control", "no-cache, no-store, must-revalidate")
+            response.headers.setdefault(
+                "Cache-Control", "no-cache, no-store, must-revalidate")
 
         # Headers específicos por tipo de conteúdo
         content_type = response.headers.get("content-type", "").split(";")[0]
         if content_type in ("application/json", "text/html"):
-            response.headers.setdefault("Cache-Control", "no-cache, no-store, must-revalidate")
+            response.headers.setdefault(
+                "Cache-Control", "no-cache, no-store, must-revalidate")
 
         return response
 
