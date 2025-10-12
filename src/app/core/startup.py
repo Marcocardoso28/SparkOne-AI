@@ -17,7 +17,16 @@ async def validate_configuration() -> None:  # pragma: no cover - simple config 
     try:
         validate_critical_config(settings)
     except ConfigurationError as e:
-        raise RuntimeError(str(e)) from e
+        # Allow partial startup when explicitly enabled
+        if getattr(settings, "allow_partial_startup", False):
+            # Log and continue without aborting app startup
+            import structlog
+
+            structlog.get_logger(__name__).warning(
+                "partial_startup_enabled", detail=str(e)
+            )
+        else:
+            raise RuntimeError(str(e)) from e
 
     # Keep existing specific validations for backward compatibility
     missing: list[str] = []

@@ -173,6 +173,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def _should_skip_rate_limit(self, request: Request) -> bool:
         static_extensions = {".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg"}
         path = request.url.path.lower()
+        if path.endswith('/'):
+            path = path.rstrip('/')
         if any(path.endswith(ext) for ext in static_extensions):
             return True
         if path in {"/health", "/metrics"}:

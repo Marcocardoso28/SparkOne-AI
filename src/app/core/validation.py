@@ -23,7 +23,7 @@ def validate_critical_config(settings: Settings) -> None:
     """
     errors: list[str] = []
 
-    # Validate LLM providers
+    # Validate LLM providers (can be bypassed when allow_partial_startup is true)
     if not settings.openai_api_key and not settings.local_llm_url:
         errors.append("No LLM provider configured. Set either OPENAI_API_KEY or LOCAL_LLM_URL.")
 
@@ -78,7 +78,20 @@ def validate_critical_config(settings: Settings) -> None:
     for warning in warnings:
         logger.warning("configuration_warning", message=warning)
 
-    # Raise error if any critical issues found
+    # Optionally allow partial startup by filtering non-fatal errors
+    if settings.allow_partial_startup and errors:
+        filtered: list[str] = []
+        for err in errors:
+            if "LLM provider" in err:
+                logger.warning("startup_warning", message=err)
+                continue
+            if "EVOLUTION_API_BASE_URL" in err or "EVOLUTION_API_KEY" in err:
+                logger.warning("startup_warning", message=err)
+                continue
+            filtered.append(err)
+        errors = filtered
+
+    # Raise error if any critical issues remain
     if errors:
         error_message = "Critical configuration errors found:\n" + "\n".join(
             f"- {error}" for error in errors

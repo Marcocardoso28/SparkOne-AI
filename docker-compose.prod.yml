@@ -2,6 +2,8 @@ version: '3.9'
 services:
   traefik:
     image: traefik:v3.0
+    profiles:
+    - disabled  # Disabled in production: use Setup-Macspark Traefik on 'proxy' network
     command:
     - --api.dashboard=true
     - --api.insecure=false
@@ -42,11 +44,12 @@ services:
     - traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$8K1p/a0dL2Lz8bEj8K1p/a0dL2Lz8bEj8K1p/a0dL2Lz8bEj8K1p/a0dL2Lz8bEj
   api:
     build: .
-    command: uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
     env_file: .env
     environment:
     - TZ=${TZ:-America/Sao_Paulo}
     - PYTHONPATH=src
+    - ALLOW_PARTIAL_STARTUP=true
     volumes:
     - ./uploads:/app/uploads
     - ./secrets:/secrets:ro
@@ -54,38 +57,30 @@ services:
     - redis
     networks:
     - sparkone-network
-    - reverse-proxy
+    - proxy
     labels:
-    - traefik.enable=true
-    - traefik.docker.network=reverse-proxy
-    - traefik.http.middlewares.rate-limit.ratelimit.average=50
-    - traefik.http.middlewares.rate-limit.ratelimit.burst=100
-    - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-For=
-    - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-Proto=https
-    - traefik.http.routers.api.entrypoints=websecure
-    - traefik.http.routers.api.middlewares=security-headers,rate-limit
-    - traefik.http.routers.api.rule=Host(`yourdomain.com`) || Host(`www.yourdomain.com`)
-    - traefik.http.routers.api.service=api
-    - traefik.http.routers.api.tls.certresolver=letsencrypt
-    - traefik.http.routers.sparkone-api.entrypoints=websecure
-    - traefik.http.routers.sparkone-api.rule=Host(`sparkone-ai.macspark.dev`)
-    - traefik.http.routers.sparkone-api.tls=true
-    - traefik.http.services.api.loadbalancer.server.port=8000
-    - traefik.http.services.sparkone-api.loadbalancer.server.port=8000
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.middlewares.rate-limit.ratelimit.average=50
+      - traefik.http.middlewares.rate-limit.ratelimit.burst=100
+      - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-For=
+      - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-Proto=https
+      - traefik.http.routers.sparkone-api.entrypoints=web
+      - traefik.http.routers.sparkone-api.middlewares=security-headers,rate-limit
+      - traefik.http.routers.sparkone-api.rule=Host(`sparkone-ai.macspark.dev`)
+      - traefik.http.services.sparkone-api.loadbalancer.server.port=8000
     restart: unless-stopped
     healthcheck:
       test:
-      - CMD
-      - curl
-      - -f
-      - http://localhost:8000/health
+      - CMD-SHELL
+      - python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/').status==200 else 1)"
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
   worker:
     build: .
-    command: python -m src.app.workers.scheduler
+    command: python -m app.workers.scheduler
     env_file: .env
     environment:
     - TZ=${TZ:-America/Sao_Paulo}
@@ -202,6 +197,6 @@ volumes:
 networks:
   sparkone-network:
     driver: bridge
-  reverse-proxy:
+  proxy:
     external: true
-    name: reverse-proxy
+    name: proxy

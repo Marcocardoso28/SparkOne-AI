@@ -8,13 +8,14 @@ from typing import Any
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.sql import func
 
-from app.models.db.base import Base
+from .base import Base
 
 
 class User(Base):
     """Modelo de usuário com autenticação de dois fatores."""
 
     __tablename__ = "users"
+    __table_args__ = {"extend_existing": True}
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)

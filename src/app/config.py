@@ -109,6 +109,9 @@ class Settings(BaseSettings):
     backup_schedule: str = "0 2 * * *"
     backup_retention_days: int = 30
 
+    # Startup behavior
+    allow_partial_startup: bool = False
+
     @field_validator(
         "openai_base_url",
         "local_llm_url",

@@ -12,7 +12,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_session
+from app.core.database import get_db_session
 from app.models.db.user import User
 from app.services.auth_2fa import two_factor_service
 
@@ -54,11 +54,41 @@ class PasswordChangeRequest(BaseModel):
     new_password: str
 
 
+async def get_current_user(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session)
+) -> User:
+    """Dependency para obter o usuário atual."""
+    session_token = request.cookies.get("sparkone_session")
+    if not session_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            session_token = auth_header[7:]
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de sessão não fornecido"
+        )
+    result = await session.execute(
+        select(User).where(
+            User.session_token == session_token,
+            User.is_active == True,
+        )
+    )
+    user = result.scalar_one_or_none()
+    if not user or not user.is_session_valid():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão inválida ou expirada",
+        )
+    return user
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
     response: Response,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db_session)
 ):
     """Login com suporte a 2FA."""
     # Find user
@@ -134,7 +164,7 @@ async def logout(
 @router.post("/setup-2fa", response_model=TwoFactorSetupResponse)
 async def setup_2fa(
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db_session)
 ):
     """Configura 2FA para o usuário."""
     if current_user.two_factor_enabled:
@@ -156,7 +186,7 @@ async def setup_2fa(
 async def verify_2fa_setup(
     request: TwoFactorVerifyRequest,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db_session)
 ):
     """Verifica a configuração de 2FA."""
     if current_user.two_factor_enabled:
@@ -178,7 +208,7 @@ async def verify_2fa_setup(
 async def disable_2fa(
     request: PasswordChangeRequest,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db_session)
 ):
     """Desabilita 2FA para o usuário."""
     if not current_user.two_factor_enabled:
@@ -205,43 +235,6 @@ async def get_current_user_info(
     """Retorna informações do usuário atual."""
     return current_user.to_dict()
 
-
-async def get_current_user(
-    request: Request,
-    session: AsyncSession = Depends(get_session)
-) -> User:
-    """Dependency para obter o usuário atual."""
-    # Try to get session token from cookie or header
-    session_token = request.cookies.get("sparkone_session")
-
-    if not session_token:
-        # Try Authorization header
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            session_token = auth_header[7:]
-
-    if not session_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de sessão não fornecido"
-        )
-
-    # Find user by session token
-    result = await session.execute(
-        select(User).where(
-            User.session_token == session_token,
-            User.is_active == True
-        )
-    )
-    user = result.scalar_one_or_none()
-
-    if not user or not user.is_session_valid():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sessão inválida ou expirada"
-        )
-
-    return user
 
 
 __all__ = ["router", "get_current_user"]
