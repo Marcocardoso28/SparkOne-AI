@@ -12,13 +12,17 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import get_settings
-from app.core.database import get_session_factory
+from app.infrastructure.database.database import get_session_factory
 from app.core.metrics import (
     FALLBACK_NOTIFICATION_COUNTER,
     SHEETS_SYNC_COUNTER,
     WHATSAPP_NOTIFICATION_COUNTER,
 )
-from app.dependencies import build_ingestion_service, get_message_normalizer, get_whatsapp_service
+from app.api.dependencies import (
+    build_ingestion_service,
+    get_message_normalizer,
+    get_whatsapp_service,
+)
 from app.infrastructure.integrations.google_sheets import GoogleSheetsClient
 from app.infrastructure.chat import ChatProviderRouter
 from app.domain.services.brief import BriefService
