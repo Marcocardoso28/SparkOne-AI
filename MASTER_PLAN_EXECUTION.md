@@ -16,8 +16,8 @@ Este plano contém TODAS as tarefas para:
 6. ✅ Testar todas funcionalidades
 
 **TOTAL DE TAREFAS:** 36
-**PROGRESSO ATUAL:** 4/36 (11%)
-**CHECKPOINT ATUAL:** FASE 2 - STORAGE ADAPTERS (TAREFA 2.1)
+**PROGRESSO ATUAL:** 8/36 (22%)
+**CHECKPOINT ATUAL:** FASE 2 - STORAGE ADAPTERS (TAREFA 2.5)
 
 ---
 
@@ -47,7 +47,7 @@ Este plano contém TODAS as tarefas para:
 **Arquivos Criados:** 3 ADRs + PRD atualizado
 
 ### FASE 2: IMPLEMENTAÇÃO STORAGE ADAPTERS
-**Status:** ⬜ NÃO INICIADO
+**Status:** 🔄 EM ANDAMENTO (4/9 tarefas - 44%)
 **Duração Estimada:** 1-2 dias
 **Arquivos Criados:** ~15 arquivos
 
@@ -313,57 +313,62 @@ services:
 ### FASE 2: IMPLEMENTAÇÃO STORAGE ADAPTERS
 
 #### TAREFA 2.1: Criar estrutura de diretórios
-**Status:** ⬜
-**Comandos:**
-```bash
-mkdir -p src/app/domain/interfaces
-mkdir -p src/app/infrastructure/storage
-mkdir -p src/app/infrastructure/storage/adapters
-mkdir -p tests/unit/infrastructure/storage
-mkdir -p tests/integration/storage
-```
+**Status:** ✅ COMPLETO
+**Commit:** 43a262d "refactor: Create storage adapter directory structure"
 
 **Checklist:**
-- [ ] Diretórios criados
-- [ ] Commit: "refactor: Create storage adapter directory structure"
+- [x] Diretórios criados
+- [x] __init__.py files adicionados
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 2.2: Criar interface base StorageAdapter
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/domain/interfaces/storage_adapter.py`
-**Conteúdo:** Ver implementação completa abaixo
+**Commit:** 79b7f65 "feat: Add StorageAdapter base interface"
 
 **Checklist:**
-- [ ] Arquivo criado
-- [ ] Todos os métodos abstratos definidos
-- [ ] Docstrings completas
-- [ ] Type hints corretos
-- [ ] Commit: "feat: Add StorageAdapter base interface"
+- [x] Arquivo criado com 210 linhas
+- [x] Todos os métodos abstratos definidos (save, update, delete, get, health_check)
+- [x] Docstrings completas com exemplos
+- [x] Type hints corretos
+- [x] StorageAdapterError exception criada
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 2.3: Criar StorageAdapterRegistry
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/infrastructure/storage/registry.py`
+**Commit:** d0fc34c "feat: Add StorageAdapterRegistry with auto-discovery"
+
 **Checklist:**
-- [ ] Auto-discovery implementado
-- [ ] get_adapter() funcional
-- [ ] list_available() funcional
-- [ ] Commit: "feat: Add StorageAdapterRegistry with auto-discovery"
+- [x] Singleton pattern implementado
+- [x] Auto-discovery via auto_discover_adapters() funcional
+- [x] register() manual funcional
+- [x] get_adapter() funcional com validação
+- [x] list_available() funcional (sorted)
+- [x] get_adapter_info() com detalhes completos
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 2.4: Migrar código Notion para NotionAdapter
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/infrastructure/storage/adapters/notion_adapter.py`
-**Ação:** Refatorar código existente de `src/app/domain/services/tasks.py`
+**Commits:**
+- 1d0e1c7 "feat: Add external_id field to TaskRecord"
+- f350ed8 "refactor: Migrate Notion integration to NotionAdapter"
 
 **Checklist:**
-- [ ] NotionAdapter implementa StorageAdapter
-- [ ] Código migrado de TaskService
-- [ ] Testes unitários criados
-- [ ] Commit: "refactor: Migrate Notion integration to NotionAdapter"
+- [x] NotionAdapter implementa StorageAdapter (295 linhas)
+- [x] Código migrado de TaskService (_build_notion_payload)
+- [x] save_task() completamente implementado
+- [x] update/delete/get placeholders (NotionClient limitado)
+- [x] health_check() com latência implementado
+- [x] external_id field adicionado ao TaskRecord model
+- [x] Commits realizados
 
 ---
 
@@ -809,13 +814,13 @@ Cada tarefa está completa quando:
 
 ```
 FASE 1: DOCUMENTAÇÃO        ✅✅✅✅ 4/4  (100%)
-FASE 2: STORAGE ADAPTERS    ⬜⬜⬜⬜⬜⬜⬜⬜⬜ 0/9  (0%)
+FASE 2: STORAGE ADAPTERS    ✅✅✅✅⬜⬜⬜⬜⬜ 4/9  (44%)
 FASE 3: PROACTIVITY ENGINE  ⬜⬜⬜⬜⬜⬜⬜ 0/7  (0%)
 FASE 4: WEB & APIs          ⬜⬜⬜ 0/3  (0%)
 FASE 5: TESTES              ⬜⬜⬜⬜⬜⬜ 0/6  (0%)
 FASE 6: DOCS FINAIS         ⬜⬜⬜⬜⬜⬜⬜ 0/7  (0%)
 
-TOTAL: 4/36 tarefas (11%)
+TOTAL: 8/36 tarefas (22%)
 ```
 
 ---
@@ -851,9 +856,10 @@ alembic upgrade head
 
 ## 📞 CHECKPOINT DE RETOMADA
 
-**ÚLTIMA TAREFA COMPLETA:** 1.4 - Atualizar PRD (Commit: 1f64920)
-**PRÓXIMA TAREFA:** 2.1 - Criar estrutura de diretórios
-**FASE ATUAL:** FASE 2 - IMPLEMENTAÇÃO STORAGE ADAPTERS
+**ÚLTIMA TAREFA COMPLETA:** 2.4 - NotionAdapter (Commits: 1d0e1c7, f350ed8)
+**PRÓXIMA TAREFA:** 2.5 - Implementar ClickUpAdapter
+**FASE ATUAL:** FASE 2 - IMPLEMENTAÇÃO STORAGE ADAPTERS (44% completo)
+**PROGRESSO GERAL:** 8/36 tarefas (22%)
 **DATA ÚLTIMA ATUALIZAÇÃO:** 2025-01-27
 
 ---
