@@ -726,3 +726,256 @@ INSERT INTO user_storage_configs (adapter_name, config_json, priority) VALUES
 - ✅ Cobertura de testes > 85%
 
 **Review:** Após 3 meses de uso em produção
+
+---
+
+## ADR-015: User Preferences System
+
+**Date:** 2025-01-27
+**Status:** ✅ Accepted
+**Deciders:** Marco Cardoso, Development Team
+
+### Context
+Usuários do SparkOne precisam configurar preferências personalizadas sem modificar código ou variáveis de ambiente (.env). Isso inclui:
+- Backends de armazenamento ativos (Notion, ClickUp, Sheets)
+- Credenciais de APIs externas
+- Horários de notificações (brief diário, lembretes)
+- Configurações de prioridade entre backends
+- Preferências de formato (JSON vs texto)
+
+A implementação atual usa `.env` para configuração global, não permitindo configuração por usuário nem interface amigável para ajustes.
+
+### Decision
+Criar sistema de preferências do usuário baseado em tabela `user_storage_configs` com schema JSONB flexível para guardar configurações específicas de cada adapter. Interface web em `/web/settings` permite configuração via UI.
+
+**Related Requirements:** RF-020 (User Preferences Management)
+**Related Backlog:** RF-022 (Multi-tenant preparação)
+**Dependencies:** ADR-014 (Storage Adapter Pattern), PostgreSQL com suporte JSONB
+
+### Consequences
+
+**Positive:**
+- ✅ Configuração via UI (não requer acesso ao servidor)
+- ✅ Multi-tenant ready (coluna `user_id` preparada)
+- ✅ JSONB permite configs flexíveis por adapter
+- ✅ Priorização de backends (campo `priority`)
+- ✅ Ativar/desativar backends sem deletar config
+- ✅ Validação de schema antes de salvar
+- ✅ Histórico de configurações (timestamps)
+
+**Negative:**
+- ⚠️ Validação de schema necessária para cada adapter
+- ⚠️ Migração complexa se schema mudar
+- ⚠️ Segurança: credenciais em banco (usar encryption)
+- ⚠️ Cache invalidation ao mudar configs
+- ⚠️ UI deve validar configs antes de salvar
+
+### Database Schema
+
+```sql
+CREATE TABLE user_storage_configs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID,  -- NULL para single-user, UUID para multi-tenant
+    adapter_name VARCHAR(50) NOT NULL,
+    config_json JSONB NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    priority INT DEFAULT 0,  -- 0 = maior prioridade
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_user_adapter UNIQUE (user_id, adapter_name)
+);
+
+CREATE INDEX idx_user_storage_active ON user_storage_configs(user_id, is_active, priority);
+CREATE INDEX idx_adapter_name ON user_storage_configs(adapter_name);
+
+-- Exemplos de configurações
+INSERT INTO user_storage_configs (user_id, adapter_name, config_json, priority) VALUES
+(NULL, 'notion', '{"api_key": "secret_xxx", "database_id": "db_xxx"}', 1),
+(NULL, 'clickup', '{"api_key": "pk_xxx", "list_id": "list_xxx", "workspace_id": "ws_xxx"}', 2),
+(NULL, 'sheets', '{"spreadsheet_id": "sheet_xxx", "credentials_path": "/path/to/creds.json"}', 3);
+```
+
+### Additional Preferences Table
+
+```sql
+CREATE TABLE user_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE,
+    brief_time TIME DEFAULT '08:00:00',  -- Horário do brief diário
+    timezone VARCHAR(50) DEFAULT 'America/Sao_Paulo',
+    notification_channels JSONB DEFAULT '["whatsapp"]',  -- ["whatsapp", "email"]
+    deadline_reminder_hours INT DEFAULT 24,  -- Horas antes do prazo
+    preferences_json JSONB DEFAULT '{}',  -- Outras preferências futuras
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Configuração padrão
+INSERT INTO user_preferences (user_id, brief_time, notification_channels) VALUES
+(NULL, '08:00:00', '["whatsapp"]');
+```
+
+### API Endpoints
+
+```python
+# Storage Configs
+GET    /api/v1/storage-configs           # Listar configs ativas
+POST   /api/v1/storage-configs           # Criar nova config
+PUT    /api/v1/storage-configs/{id}      # Atualizar config
+DELETE /api/v1/storage-configs/{id}      # Deletar config
+POST   /api/v1/storage-configs/{id}/test # Testar conexão
+
+# Available Adapters
+GET    /api/v1/storage-configs/available # Listar adapters disponíveis
+
+# User Preferences
+GET    /api/v1/preferences               # Ver preferências
+PUT    /api/v1/preferences               # Atualizar preferências
+```
+
+### Web Interface
+
+```
+/web/settings
+├── Storage Backends
+│   ├── Notion (✅ Ativo, Prioridade 1) [Edit] [Test] [Delete]
+│   ├── ClickUp (✅ Ativo, Prioridade 2) [Edit] [Test] [Delete]
+│   └── [+ Adicionar novo backend]
+│
+├── Preferências Gerais
+│   ├── Horário do brief: [08:00] ⏰
+│   ├── Timezone: [America/Sao_Paulo] 🌎
+│   ├── Canais de notificação: [☑ WhatsApp] [☐ Email]
+│   └── Lembrete de prazo: [24] horas antes
+│
+└── [Salvar Alterações]
+```
+
+### Validation Strategy
+
+```python
+class StorageConfigValidator:
+    def validate(self, adapter_name: str, config: dict) -> tuple[bool, str]:
+        """Valida configuração antes de salvar"""
+        adapter = StorageAdapterRegistry.get_adapter(adapter_name, config)
+
+        # 1. Valida schema (campos obrigatórios)
+        required = adapter.required_config
+        missing = [f for f in required if f not in config]
+        if missing:
+            return False, f"Campos obrigatórios faltando: {missing}"
+
+        # 2. Testa conexão (opcional, pode ser lento)
+        try:
+            health = await adapter.health_check()
+            if health['status'] != 'healthy':
+                return False, f"Falha no health check: {health.get('error')}"
+        except Exception as e:
+            return False, f"Erro ao testar conexão: {str(e)}"
+
+        return True, "Configuração válida"
+```
+
+### Security Considerations
+
+**Encryption at Rest:**
+```python
+# Criptografar credenciais antes de salvar
+from cryptography.fernet import Fernet
+
+def encrypt_config(config: dict, key: bytes) -> dict:
+    """Criptografa campos sensíveis"""
+    sensitive_fields = ['api_key', 'password', 'token']
+    encrypted = config.copy()
+
+    for field in sensitive_fields:
+        if field in encrypted:
+            encrypted[field] = Fernet(key).encrypt(encrypted[field].encode())
+
+    return encrypted
+```
+
+**Recomendação:** Usar AWS Secrets Manager ou HashiCorp Vault em produção.
+
+### Migration Path
+
+**Step 1: Criar tabelas**
+```bash
+alembic revision -m "add_user_preferences_tables"
+alembic upgrade head
+```
+
+**Step 2: Migrar configs do .env**
+```python
+# Script de migração
+async def migrate_env_to_db():
+    settings = get_settings()
+
+    if settings.notion_api_key:
+        await create_storage_config(
+            adapter_name="notion",
+            config={
+                "api_key": settings.notion_api_key,
+                "database_id": settings.notion_database_id
+            },
+            priority=1
+        )
+```
+
+**Step 3: Interface web**
+- Criar `/web/settings` com formulários
+- Validação client-side + server-side
+- Feedback visual (success/error)
+
+**Step 4: Deprecar .env**
+- Manter .env como fallback durante migração
+- Logs de warning se usar .env
+- Remover após 100% migrado
+
+### Testing Strategy
+
+**Unit Tests:**
+```python
+def test_config_validation():
+    validator = StorageConfigValidator()
+
+    # Config válida
+    assert validator.validate("notion", {
+        "api_key": "secret_xxx",
+        "database_id": "db_xxx"
+    }) == (True, "Configuração válida")
+
+    # Config inválida (campo faltando)
+    assert validator.validate("notion", {
+        "api_key": "secret_xxx"
+    }) == (False, "Campos obrigatórios faltando: ['database_id']")
+```
+
+**Integration Tests:**
+```python
+async def test_storage_config_crud():
+    # Create
+    config = await create_storage_config(...)
+    assert config.adapter_name == "notion"
+
+    # Read
+    configs = await list_storage_configs()
+    assert len(configs) == 1
+
+    # Update
+    await update_storage_config(config.id, {"priority": 2})
+
+    # Delete
+    await delete_storage_config(config.id)
+```
+
+### Success Metrics
+
+- ✅ Usuário consegue adicionar novo backend em < 2 min
+- ✅ Validação previne 100% de configs inválidas
+- ✅ Test connection funciona para todos adapters
+- ✅ UI responsiva e intuitiva
+- ✅ Encryption funciona (audit de segurança)
+- ✅ Migration .env → DB sem downtime
+
+**Review:** Após 1 mês de uso em produção
