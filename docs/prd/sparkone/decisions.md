@@ -567,3 +567,162 @@ Dependencies: ADR-003 (pgvector), provedor de embeddings (agnóstico)
 - `src/app/services/vector_search.py` + migração p/ colunas de embeddings
 - Atualizar embeddings em updates de entidades
 - Consultas `top_k`, meta p95 < 500ms; observabilidade de latência
+
+---
+
+## ADR-014: Storage Adapter Pattern
+
+**Date:** 2025-01-27
+**Status:** ✅ Accepted
+**Deciders:** Marco Cardoso, Development Team
+
+### Context
+SparkOne precisa suportar múltiplos backends de armazenamento (Notion, ClickUp, Google Sheets, Asana, Trello, etc) sem acoplamento forte com APIs específicas. Usuários devem poder configurar múltiplos destinos simultaneamente, com priorização e fallback automático em caso de falha.
+
+A implementação atual está acoplada ao Notion, dificultando a adição de novos backends e não permitindo sincronização com múltiplas ferramentas.
+
+### Decision
+Implementar padrão **Adapter** com **registry dinâmico** de storage backends. Cada backend (Notion, ClickUp, Sheets, etc) implementa interface comum `StorageAdapter`, permitindo adicionar novos backends sem modificar o core do sistema.
+
+**Related Requirements:** RF-019 (Multi-Storage Backend System)
+**Related Backlog:** TECH-005 (Extensibilidade), RF-021 (Plugin System - futuro)
+**Dependencies:** PostgreSQL (user_storage_configs table), Redis (opcional para queue)
+
+### Consequences
+
+**Positive:**
+- ✅ Adicionar novos backends sem modificar core do sistema
+- ✅ Múltiplos backends ativos simultaneamente (ex: Notion + ClickUp)
+- ✅ Fácil de testar (mock adapters para testes unitários)
+- ✅ Fallback automático se um backend falhar
+- ✅ Retry lógic centralizada no StorageService
+- ✅ Extensível via sistema de plugins (futuro)
+- ✅ Configuração por usuário (multi-tenant ready)
+
+**Negative:**
+- ⚠️ Complexidade adicional (camada de abstração)
+- ⚠️ Performance overhead (múltiplas chamadas API)
+- ⚠️ Sincronização pode falhar parcialmente (eventual consistency)
+- ⚠️ Debugging mais complexo (múltiplos adapters)
+- ⚠️ Necessidade de validação de schema por adapter
+
+### Architecture
+
+```python
+# Interface base
+class StorageAdapter(ABC):
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Nome do adapter: 'notion', 'clickup', 'sheets'"""
+        pass
+
+    @property
+    @abstractmethod
+    def required_config(self) -> list[str]:
+        """Configurações necessárias: ['api_key', 'database_id']"""
+        pass
+
+    @abstractmethod
+    async def save_task(self, task: Task) -> str:
+        """Salva tarefa e retorna ID externo"""
+        pass
+
+    @abstractmethod
+    async def update_task(self, external_id: str, task: Task) -> bool:
+        """Atualiza tarefa existente"""
+        pass
+
+    @abstractmethod
+    async def delete_task(self, external_id: str) -> bool:
+        """Deleta tarefa"""
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> dict:
+        """Verifica saúde da integração"""
+        pass
+
+# Registry auto-discovery
+class StorageAdapterRegistry:
+    _adapters: dict[str, type[StorageAdapter]] = {}
+
+    @classmethod
+    def register(cls, adapter_class: type[StorageAdapter]):
+        cls._adapters[adapter_class.name] = adapter_class
+
+    @classmethod
+    def get_adapter(cls, name: str, config: dict) -> StorageAdapter:
+        return cls._adapters[name](config)
+
+# Auto-registro
+StorageAdapterRegistry.register(NotionAdapter)
+StorageAdapterRegistry.register(ClickUpAdapter)
+StorageAdapterRegistry.register(GoogleSheetsAdapter)
+```
+
+### Database Schema
+
+```sql
+CREATE TABLE user_storage_configs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID,  -- Para multi-tenant futuro
+    adapter_name VARCHAR(50) NOT NULL,
+    config_json JSONB NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    priority INT DEFAULT 0,  -- Ordem de sincronização (0 = maior prioridade)
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_storage_active ON user_storage_configs(user_id, is_active, priority);
+
+-- Exemplo de registro:
+INSERT INTO user_storage_configs (adapter_name, config_json, priority) VALUES
+('notion', '{"api_key": "secret_xxx", "database_id": "db_xxx"}', 1),
+('clickup', '{"api_key": "pk_xxx", "list_id": "list_xxx"}', 2);
+```
+
+### Implementation Plan
+
+**Phase 1: Core Infrastructure**
+1. Criar interface `StorageAdapter` em `src/app/domain/interfaces/storage_adapter.py`
+2. Criar `StorageAdapterRegistry` em `src/app/infrastructure/storage/registry.py`
+3. Migration para tabela `user_storage_configs`
+
+**Phase 2: Adapters**
+1. Migrar código Notion existente para `NotionAdapter`
+2. Implementar `ClickUpAdapter`
+3. Implementar `GoogleSheetsAdapter`
+
+**Phase 3: Orchestration**
+1. Criar `StorageService` com retry logic
+2. Atualizar `TaskService` para usar `StorageService`
+3. Implementar queue de retry (Redis)
+
+**Phase 4: UI & APIs**
+1. Endpoints `/api/v1/storage-configs` (CRUD)
+2. Interface web `/web/settings` para configuração
+3. Health check dashboard
+
+### Migration Path from Current Implementation
+1. ✅ Interface base criada (não quebra código existente)
+2. ✅ Refatorar código Notion para NotionAdapter (backward compatible)
+3. ✅ StorageService substitui lógica em TaskService gradualmente
+4. ✅ Adicionar novos adapters (ClickUp, Sheets) sem impacto
+5. ✅ Deprecar código legado após migração completa
+
+### Testing Strategy
+- **Unit Tests:** Mock adapters para cada backend
+- **Integration Tests:** TestContainers para PostgreSQL/Redis
+- **E2E Tests:** Sandboxes das APIs (Notion, ClickUp)
+- **Load Tests:** Múltiplos backends simultâneos
+
+### Success Metrics
+- ✅ Adicionar novo backend em < 2 horas
+- ✅ Sincronização com 3+ backends simultâneos
+- ✅ Taxa de falha < 1% com retry automático
+- ✅ P95 latency < 2s por operação
+- ✅ Cobertura de testes > 85%
+
+**Review:** Após 3 meses de uso em produção
