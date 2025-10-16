@@ -30,6 +30,7 @@ class TaskRecord(TimestampMixin, Base):
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     channel: Mapped[str] = mapped_column(String(50), nullable=False)
     sender: Mapped[str] = mapped_column(String(255), nullable=False)
+    external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 __all__ = ["TaskRecord", "TaskStatus"]
