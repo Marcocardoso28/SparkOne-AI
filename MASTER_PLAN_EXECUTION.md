@@ -16,8 +16,8 @@ Este plano contém TODAS as tarefas para:
 6. ✅ Testar todas funcionalidades
 
 **TOTAL DE TAREFAS:** 36
-**PROGRESSO ATUAL:** 13/36 (36%)
-**CHECKPOINT ATUAL:** FASE 3 - PROACTIVITY ENGINE (TAREFA 3.1)
+**PROGRESSO ATUAL:** 20/36 (56%)
+**CHECKPOINT ATUAL:** FASE 4 - WEB & APIs (TAREFA 4.1)
 
 ---
 
@@ -52,9 +52,9 @@ Este plano contém TODAS as tarefas para:
 **Arquivos Criados:** 10 arquivos
 
 ### FASE 3: IMPLEMENTAÇÃO PROACTIVITY ENGINE
-**Status:** ⬜ NÃO INICIADO
-**Duração Estimada:** 2-3 dias
-**Arquivos Criados:** ~10 arquivos
+**Status:** ✅ COMPLETO (7/7 tarefas - 100%)
+**Duração Real:** 1 hora
+**Arquivos Criados:** 4 arquivos (jobs.py, scheduler.py atualizado, user_preferences.py, tasks.py atualizado)
 
 ### FASE 4: INTERFACE WEB E APIs
 **Status:** ⬜ NÃO INICIADO
@@ -446,101 +446,89 @@ services:
 ### FASE 3: IMPLEMENTAÇÃO PROACTIVITY ENGINE
 
 #### TAREFA 3.1: Criar estrutura do worker
-**Status:** ⬜
-**Comandos:**
-```bash
-mkdir -p src/app/workers
-touch src/app/workers/__init__.py
-touch src/app/workers/scheduler.py
-touch src/app/workers/jobs.py
-```
-
+**Status:** ✅ COMPLETO
+**Commit:** c58b723 "feat: Create worker structure for ProactivityEngine"
 **Checklist:**
-- [ ] Estrutura criada
-- [ ] Commit: "feat: Create worker structure for ProactivityEngine"
+- [x] Estrutura criada (jobs.py adicionado)
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 3.2: Implementar ProactivityEngine com APScheduler
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/workers/scheduler.py`
+**Commit:** 36f6c61 "feat: Implement ProactivityEngine with APScheduler"
 **Checklist:**
-- [ ] APScheduler configurado
-- [ ] Timezone correto
-- [ ] Logging estruturado
-- [ ] Graceful shutdown
-- [ ] Commit: "feat: Implement ProactivityEngine scheduler"
+- [x] APScheduler configurado (AsyncIOScheduler)
+- [x] Timezone correto (ZoneInfo via settings)
+- [x] Logging estruturado (job count, timezone)
+- [x] Graceful shutdown (scheduler.shutdown(wait=True))
+- [x] 6 jobs configurados (daily_brief_job legacy + 4 ProactivityEngine jobs + sheets_sync)
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 3.3: Implementar Job: Brief Diário
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/workers/jobs.py` (função: `send_daily_brief`)
+**Commit:** 36f6c61 "feat: Implement ProactivityEngine with APScheduler"
 **Checklist:**
-- [ ] Busca tarefas e eventos do dia
-- [ ] Formata brief
-- [ ] Envia via WhatsApp
-- [ ] Logging de execução
-- [ ] Commit: "feat: Add daily brief job"
+- [x] Busca user_preferences do banco (brief_time, notification_channels)
+- [x] Usa BriefService.textual_brief() para gerar conteúdo
+- [x] Envia via WhatsApp (WhatsAppService)
+- [x] Logging estruturado (chars, user_id)
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 3.4: Implementar Job: Lembretes de Prazo
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/workers/jobs.py` (função: `check_deadlines`)
+**Commit:** 36f6c61 "feat: Implement ProactivityEngine with APScheduler"
 **Checklist:**
-- [ ] Busca tarefas com prazo em 24h
-- [ ] Envia lembretes
-- [ ] Marca como notificado
-- [ ] Commit: "feat: Add deadline reminder job"
+- [x] Busca tarefas com prazo em deadline_reminder_hours (default: 24h)
+- [x] Envia lembretes formatados via WhatsApp
+- [x] Marca como notificado (reminded_at timestamp)
+- [x] Query otimizada (status TODO/IN_PROGRESS, reminded_at is null)
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 3.5: Implementar Job: Verificação de Atrasadas
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/workers/jobs.py` (função: `check_overdue`)
+**Commit:** 36f6c61 "feat: Implement ProactivityEngine with APScheduler"
 **Checklist:**
-- [ ] Identifica tarefas atrasadas
-- [ ] Notifica usuário
-- [ ] Commit: "feat: Add overdue check job"
+- [x] Identifica tarefas atrasadas (due_at < now, status TODO/IN_PROGRESS)
+- [x] Notifica usuário com lista de tarefas atrasadas
+- [x] Mensagem formatada com data de atraso
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 3.6: Implementar Job: Lembretes de Eventos
-**Status:** ⬜
+**Status:** ✅ COMPLETO
 **Arquivo:** `src/app/workers/jobs.py` (função: `event_reminders`)
+**Commit:** 36f6c61 "feat: Implement ProactivityEngine with APScheduler"
 **Checklist:**
-- [ ] Busca eventos próximos (30 min)
-- [ ] Envia lembretes
-- [ ] Commit: "feat: Add event reminder job"
+- [x] Busca eventos próximos (janela de 25-35 min, target 30 min)
+- [x] Envia lembretes via WhatsApp
+- [x] Marca eventos como reminded (reminded_at)
+- [x] Nota: usa due_at como proxy para start_time (future: events table separada)
+- [x] Commit realizado
 
 ---
 
 #### TAREFA 3.7: Criar Worker Container no Docker Compose
-**Status:** ⬜
-**Arquivo:** `docker-compose.yml`
-**Modificação:**
-```yaml
-  worker:
-    build: .
-    command: python -m app.workers.scheduler
-    depends_on:
-      - db
-      - cache
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - EVOLUTION_API_BASE_URL=${EVOLUTION_API_BASE_URL}
-      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
-    restart: unless-stopped
-```
-
+**Status:** ✅ COMPLETO
+**Arquivo:** `docker-compose.prod.yml`
+**Commit:** a2e03f9 "docker: Enhance worker container for ProactivityEngine"
 **Checklist:**
-- [ ] Serviço worker adicionado
-- [ ] Variáveis de ambiente corretas
-- [ ] Restart policy configurada
-- [ ] Commit: "docker: Add worker container for ProactivityEngine"
+- [x] Serviço worker já existia (linha 72-98)
+- [x] Variáveis de ambiente adicionadas (DATABASE_URL, REDIS_URL, OPENAI_API_KEY, EVOLUTION_API_*)
+- [x] Health check adicionado (ps aux | grep scheduler)
+- [x] Restart policy: unless-stopped (já configurado)
+- [x] Commit realizado
 
 ---
 
@@ -821,12 +809,12 @@ Cada tarefa está completa quando:
 ```
 FASE 1: DOCUMENTAÇÃO        ✅✅✅✅ 4/4  (100%)
 FASE 2: STORAGE ADAPTERS    ✅✅✅✅✅✅✅✅✅ 9/9  (100%)
-FASE 3: PROACTIVITY ENGINE  ⬜⬜⬜⬜⬜⬜⬜ 0/7  (0%)
+FASE 3: PROACTIVITY ENGINE  ✅✅✅✅✅✅✅ 7/7  (100%)
 FASE 4: WEB & APIs          ⬜⬜⬜ 0/3  (0%)
 FASE 5: TESTES              ⬜⬜⬜⬜⬜⬜ 0/6  (0%)
 FASE 6: DOCS FINAIS         ⬜⬜⬜⬜⬜⬜⬜ 0/7  (0%)
 
-TOTAL: 13/36 tarefas (36%)
+TOTAL: 20/36 tarefas (56%)
 ```
 
 ---
@@ -862,24 +850,32 @@ alembic upgrade head
 
 ## 📞 CHECKPOINT DE RETOMADA
 
-**ÚLTIMA TAREFA COMPLETA:** 2.9 - TaskService Refactor (Commit: b008fce)
-**PRÓXIMA TAREFA:** 3.1 - Criar estrutura do worker
-**FASE ATUAL:** FASE 3 - IMPLEMENTAÇÃO PROACTIVITY ENGINE (0% completo)
-**PROGRESSO GERAL:** 13/36 tarefas (36%)
+**ÚLTIMA TAREFA COMPLETA:** 3.7 - Worker Container (Commit: a2e03f9)
+**PRÓXIMA TAREFA:** 4.1 - Criar endpoints /api/v1/storage-configs
+**FASE ATUAL:** FASE 4 - INTERFACE WEB E APIs (0% completo)
+**PROGRESSO GERAL:** 20/36 tarefas (56%)
 **DATA ÚLTIMA ATUALIZAÇÃO:** 2025-01-27
 
-**FASE 2 COMPLETA! ✅**
-Todos os 9 adapters de storage implementados com sucesso:
-- StorageAdapter interface (base)
-- StorageAdapterRegistry (auto-discovery)
-- NotionAdapter (migrado do código legado)
-- ClickUpAdapter (full CRUD)
-- GoogleSheetsAdapter (full CRUD + batch import)
-- StorageService orchestrator (multi-backend + retry)
-- Database migrations (user_storage_configs + user_preferences)
-- TaskService refactor (integration complete)
+**FASE 3 COMPLETA! ✅**
+ProactivityEngine implementado com sucesso:
+- Worker structure criada (jobs.py, scheduler.py)
+- APScheduler configurado com timezone e graceful shutdown
+- UserPreferences model (brief_time, timezone, notification_channels)
+- TaskRecord atualizado (due_at, reminded_at, TaskStatus.TODO)
+- 4 jobs implementados:
+  * send_daily_brief() - 08:00 diário
+  * check_deadlines() - Lembretes 24h antes (cada hora)
+  * check_overdue() - Tarefas atrasadas (a cada 6h)
+  * event_reminders() - Eventos próximos (janela 30 min, check 5min)
+- Worker container no docker-compose.prod.yml
+- Health check e variáveis de ambiente configuradas
+
+**Commits da FASE 3:**
+- c58b723: Worker structure
+- 36f6c61: ProactivityEngine + all jobs
+- a2e03f9: Docker worker container
 
 ---
 
 **FIM DO MASTER PLAN**
-**Última atualização:** 2025-01-27 às 14:30 UTC
+**Última atualização:** 2025-01-27 às 15:30 UTC
