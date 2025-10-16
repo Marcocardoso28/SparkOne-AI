@@ -1,4 +1,14 @@
-"""Scheduler worker responsible for proactive routines."""
+"""ProactivityEngine Scheduler - ADR-016.
+
+Manages background jobs for automated reminders and proactive notifications:
+- Daily brief (configurable time via user_preferences)
+- Deadline reminders (24h before due date)
+- Overdue checks (every 6 hours)
+- Event reminders (30 min before event)
+- Google Sheets sync (every 5 min)
+
+Related to: ADR-016 (ProactivityEngine Architecture), RF-015
+"""
 
 from __future__ import annotations
 
@@ -28,6 +38,14 @@ from app.infrastructure.chat import ChatProviderRouter
 from app.domain.services.brief import BriefService
 from app.domain.services.email import send_email
 from app.domain.services.google_sheets_sync import GoogleSheetsSyncService
+
+# Import new ProactivityEngine jobs
+from app.workers.jobs import (
+    send_daily_brief,
+    check_deadlines,
+    check_overdue,
+    event_reminders,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -133,15 +151,27 @@ async def _fallback_notification(message: str) -> None:
 
 
 async def main() -> None:
-    """Run APScheduler with cron jobs for proactive routines."""
+    """Run APScheduler with proactive jobs.
+
+    Configures and starts all ProactivityEngine jobs:
+    1. Daily brief - 08:00 (configurable via user_preferences)
+    2. Deadline reminders - Every hour
+    3. Overdue checks - Every 6 hours
+    4. Event reminders - Every 5 minutes
+    5. Sheets sync - Every 5 minutes (legacy)
+
+    Graceful shutdown on SIGTERM/SIGINT.
+    """
 
     settings = get_settings()
-    scheduler = AsyncIOScheduler(timezone=ZoneInfo(settings.timezone))
+    timezone = ZoneInfo(settings.timezone)
+    scheduler = AsyncIOScheduler(timezone=timezone)
+
+    # Legacy jobs (keep for backward compatibility)
     scheduler.add_job(
         daily_brief_job,
-        trigger=CronTrigger(hour=7, minute=30,
-                            timezone=ZoneInfo(settings.timezone)),
-        id="daily-brief",
+        trigger=CronTrigger(hour=7, minute=30, timezone=timezone),
+        id="daily-brief-legacy",
         replace_existing=True,
         misfire_grace_time=300,
         jitter=60,
@@ -150,8 +180,7 @@ async def main() -> None:
 
     scheduler.add_job(
         sheets_sync_job,
-        trigger=IntervalTrigger(
-            minutes=5, timezone=ZoneInfo(settings.timezone)),
+        trigger=IntervalTrigger(minutes=5, timezone=timezone),
         id="sheets-sync",
         replace_existing=True,
         misfire_grace_time=120,
@@ -159,16 +188,64 @@ async def main() -> None:
         max_instances=1,
     )
 
+    # ProactivityEngine jobs (new)
+    scheduler.add_job(
+        send_daily_brief,
+        trigger=CronTrigger(hour=8, minute=0, timezone=timezone),
+        id="proactivity-daily-brief",
+        replace_existing=True,
+        misfire_grace_time=300,
+        jitter=60,
+        max_instances=1,
+        kwargs={"user_id": None},  # Single-user mode
+    )
+
+    scheduler.add_job(
+        check_deadlines,
+        trigger=IntervalTrigger(hours=1, timezone=timezone),
+        id="proactivity-deadline-reminders",
+        replace_existing=True,
+        misfire_grace_time=300,
+        max_instances=1,
+        kwargs={"user_id": None},
+    )
+
+    scheduler.add_job(
+        check_overdue,
+        trigger=IntervalTrigger(hours=6, timezone=timezone),
+        id="proactivity-overdue-check",
+        replace_existing=True,
+        misfire_grace_time=600,
+        max_instances=1,
+        kwargs={"user_id": None},
+    )
+
+    scheduler.add_job(
+        event_reminders,
+        trigger=IntervalTrigger(minutes=5, timezone=timezone),
+        id="proactivity-event-reminders",
+        replace_existing=True,
+        misfire_grace_time=120,
+        max_instances=1,
+        kwargs={"user_id": None},
+    )
+
     scheduler.start()
-    logger.info("scheduler_started")
+    logger.info(
+        "scheduler_started",
+        timezone=settings.timezone,
+        jobs=len(scheduler.get_jobs()),
+    )
 
     try:
+        # Keep scheduler running
         while True:
             await asyncio.sleep(60)
     except (KeyboardInterrupt, asyncio.CancelledError):  # pragma: no cover - runtime guard
-        logger.info("scheduler_stopping")
+        logger.info("scheduler_stopping", reason="shutdown_signal")
     finally:
-        scheduler.shutdown()
+        scheduler.shutdown(wait=True)
+        logger.info("scheduler_stopped")
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution guard

@@ -12,6 +12,7 @@ from .base import Base, TimestampMixin
 
 
 class TaskStatus(str, PyEnum):
+    TODO = "todo"
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -28,6 +29,16 @@ class TaskRecord(TimestampMixin, Base):
         String(20), nullable=False, default="pending")
     priority: Mapped[str | None] = mapped_column(String(10), default="medium")
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    due_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Alias for due_date (for ProactivityEngine compatibility)",
+    )
+    reminded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when reminder was sent (for ProactivityEngine)",
+    )
     channel: Mapped[str] = mapped_column(String(50), nullable=False)
     sender: Mapped[str] = mapped_column(String(255), nullable=False)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
