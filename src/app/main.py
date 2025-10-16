@@ -31,6 +31,7 @@ from .api.v1 import (
     ingest,
     metrics,
     profiler,
+    storage_configs,
     tasks,
     web,
     webhooks,
@@ -75,7 +76,10 @@ def create_application() -> FastAPI:
 
     allowed_hosts = _split_csv(settings.allowed_hosts)
     if allowed_hosts and allowed_hosts != ["*"]:
-        app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
+        # Garantir que healthchecks internos e chamadas locais funcionem
+        safe_hosts = set(allowed_hosts)
+        safe_hosts.update({"localhost", "127.0.0.1", "::1"})
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(safe_hosts))
 
     cors_origins = _split_csv(settings.cors_origins) or ["*"]
     cors_methods = _split_csv(settings.cors_allow_methods) or ["*"]
@@ -156,14 +160,12 @@ def create_application() -> FastAPI:
     app.include_router(brief.router)
     app.include_router(tasks.router)
     app.include_router(events.router)
+    app.include_router(storage_configs.router, prefix="/api/v1")
     app.include_router(metrics.router)
     app.include_router(alerts.router)
     app.include_router(profiler.router)
 
-    @app.get("/")
-    async def root():
-        """Redirect root to web interface."""
-        return RedirectResponse(url="/web")
+    # Root path is served by web router (home page)
 
     static_dir = Path(__file__).resolve().parent / "web" / "static"
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
