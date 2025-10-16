@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - SparkOne</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+    <style>
+        /* Settings page specific styles */
+        :root {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        body {
+            background: transparent;
+            color: white;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .settings-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .settings-header h1 {
+            font-size: 2.5rem;
+            color: #38bdf8;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .settings-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .settings-card:hover {
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            margin: 0;
+        }
+
+        .adapter-list {
+            margin-top: 1.5rem;
+        }
+
+        .adapter-item {
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid #38bdf8;
+        }
+
+        .adapter-item.inactive {
+            opacity: 0.6;
+            border-left-color: #64748b;
+        }
+
+        .adapter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .adapter-name {
+            font-weight: 600;
+            color: #38bdf8;
+            text-transform: capitalize;
+        }
+
+        .adapter-priority {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .adapter-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: #0ea5e9;
+        }
+
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.3);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        .btn-success:hover {
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            color: #38bdf8;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .alert-info {
+            background: rgba(56, 189, 248, 0.2);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            opacity: 0.6;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-link {
+            color: #38bdf8;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="/web/app" class="logo">SparkOne</a>
+                <ul class="nav-links">
+                    <li><a href="/web/app">Dashboard</a></li>
+                    <li><a href="/web/settings" class="active">Configurações</a></li>
+                    <li><a href="/web/logout">Sair</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <a href="/web/app" class="back-link">← Voltar ao Dashboard</a>
+
+            <div class="settings-header">
+                <h1>⚙️ Configurações de Storage</h1>
+                <p>Gerencie suas integrações com Notion, ClickUp e Google Sheets</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="settings-grid">
+                <!-- Current Configurations -->
+                <div class="settings-card">
+                    <div class="card-header">
+                        <span class="card-icon">📋</span>
+                        <h2>Configurações Ativas</h2>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddModal()">+ Adicionar Nova Configuração</button>
+                    <div id="configsList" class="adapter-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⏳</div>
+                            <p>Carregando configurações...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Adapters -->
+                <div class="settings-card">
+                    <div class="card-header">
+                        <span class="card-icon">🔌</span>
+                        <h2>Adapters Disponíveis</h2>
+                    </div>
+                    <div id="availableAdapters" class="adapter-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⏳</div>
+                            <p>Carregando adapters...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Config Modal -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nova Configuração</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="configForm">
+                <input type="hidden" id="configId" value="">
+
+                <div class="form-group">
+                    <label for="adapterName">Adapter *</label>
+                    <select id="adapterName" class="form-control" required>
+                        <option value="">Selecione um adapter...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="priority">Prioridade (0-100) *</label>
+                    <input type="number" id="priority" class="form-control" min="0" max="100" value="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isActive" checked>
+                        Ativa
+                    </label>
+                </div>
+
+                <div id="configFields"></div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/storage-configs';
+        let currentConfigs = [];
+        let availableAdapters = [];
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfigs();
+            loadAvailableAdapters();
+        });
+
+        // Load configurations
+        async function loadConfigs() {
+            try {
+                const response = await fetch(API_BASE);
+                if (!response.ok) throw new Error('Failed to load configs');
+
+                currentConfigs = await response.json();
+                renderConfigs();
+            } catch (error) {
+                console.error('Error loading configs:', error);
+                showAlert('Erro ao carregar configurações', 'error');
+            }
+        }
+
+        // Load available adapters
+        async function loadAvailableAdapters() {
+            try {
+                const response = await fetch(`${API_BASE}/available`);
+                if (!response.ok) throw new Error('Failed to load adapters');
+
+                availableAdapters = await response.json();
+                renderAvailableAdapters();
+                populateAdapterSelect();
+            } catch (error) {
+                console.error('Error loading adapters:', error);
+                showAlert('Erro ao carregar adapters disponíveis', 'error');
+            }
+        }
+
+        // Render configurations
+        function renderConfigs() {
+            const container = document.getElementById('configsList');
+
+            if (currentConfigs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>Nenhuma configuração cadastrada</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Clique em "Adicionar Nova Configuração" para começar</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = currentConfigs.map(config => `
+                <div class="adapter-item ${config.is_active ? '' : 'inactive'}">
+                    <div class="adapter-header">
+                        <span class="adapter-name">${config.adapter_name}</span>
+                        <span class="adapter-priority">Prioridade: ${config.priority}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; opacity: 0.7; margin-bottom: 0.5rem;">
+                        ${config.is_active ? '✅ Ativa' : '⏸️ Inativa'}
+                    </div>
+                    <div class="adapter-actions">
+                        <button class="btn btn-success btn-sm" onclick="testConnection('${config.id}')">🔍 Testar</button>
+                        <button class="btn btn-secondary btn-sm" onclick="editConfig('${config.id}')">✏️ Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteConfig('${config.id}')">🗑️ Deletar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render available adapters
+        function renderAvailableAdapters() {
+            const container = document.getElementById('availableAdapters');
+
+            container.innerHTML = availableAdapters.map(adapter => `
+                <div class="adapter-item">
+                    <div class="adapter-name">${adapter.name}</div>
+                    <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.5rem;">
+                        ${adapter.description}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Populate adapter select
+        function populateAdapterSelect() {
+            const select = document.getElementById('adapterName');
+            select.innerHTML = '<option value="">Selecione um adapter...</option>' +
+                availableAdapters.map(adapter =>
+                    `<option value="${adapter.name}">${adapter.name}</option>`
+                ).join('');
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'Nova Configuração';
+            document.getElementById('configForm').reset();
+            document.getElementById('configId').value = '';
+            document.getElementById('configModal').classList.add('show');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('configModal').classList.remove('show');
+        }
+
+        // Edit config
+        function editConfig(id) {
+            const config = currentConfigs.find(c => c.id === id);
+            if (!config) return;
+
+            document.getElementById('modalTitle').textContent = 'Editar Configuração';
+            document.getElementById('configId').value = config.id;
+            document.getElementById('adapterName').value = config.adapter_name;
+            document.getElementById('priority').value = config.priority;
+            document.getElementById('isActive').checked = config.is_active;
+
+            document.getElementById('configModal').classList.add('show');
+        }
+
+        // Delete config
+        async function deleteConfig(id) {
+            if (!confirm('Tem certeza que deseja deletar esta configuração?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete');
+
+                showAlert('Configuração deletada com sucesso!', 'success');
+                loadConfigs();
+            } catch (error) {
+                console.error('Error deleting config:', error);
+                showAlert('Erro ao deletar configuração', 'error');
+            }
+        }
+
+        // Test connection
+        function testConnection(id) {
+            showAlert('Funcionalidade de teste em desenvolvimento', 'info');
+        }
+
+        // Handle form submit
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('configId').value;
+            const adapter_name = document.getElementById('adapterName').value;
+            const priority = parseInt(document.getElementById('priority').value);
+            const is_active = document.getElementById('isActive').checked;
+
+            const payload = {
+                adapter_name,
+                config_json: { /* placeholder - will be enhanced */ },
+                is_active,
+                priority
+            };
+
+            try {
+                let response;
+                if (id) {
+                    // Update
+                    response = await fetch(`${API_BASE}/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    // Create
+                    response = await fetch(API_BASE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (!response.ok) throw new Error('Failed to save');
+
+                showAlert('Configuração salva com sucesso!', 'success');
+                closeModal();
+                loadConfigs();
+            } catch (error) {
+                console.error('Error saving config:', error);
+                showAlert('Erro ao salvar configuração', 'error');
+            }
+        });
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

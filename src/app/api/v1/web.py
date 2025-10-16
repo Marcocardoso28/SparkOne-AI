@@ -172,14 +172,21 @@ async def _require_auth(
 
 
 @router.get("/", response_class=HTMLResponse)
-async def get_home_page(request: Request) -> HTMLResponse:
-    """Exibe a página institucional inicial."""
-    return templates.TemplateResponse(
-        "home.html",
-        {
-            "request": request,
-        },
-    )
+async def get_home_page(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+) -> HTMLResponse:
+    """Redireciona para a aplicação ou login."""
+    from fastapi.responses import RedirectResponse
+
+    # Verificar se usuário está autenticado
+    session_token = request.cookies.get(LOGIN_SESSION_COOKIE)
+    if session_token and await _is_session_active(session_token, settings):
+        # Redirecionar para a aplicação
+        return RedirectResponse(url="/web/app", status_code=302)
+
+    # Redirecionar para login se não autenticado
+    return RedirectResponse(url="/web/login", status_code=302)
 
 
 @router.get("/web/app", response_class=HTMLResponse)
@@ -213,6 +220,34 @@ async def get_web_form(
             "timezone": settings.timezone,
             "max_upload": settings.web_max_upload_size,
             "user": {"name": "Usuário"},  # Adicionando variável user que estava faltando
+        },
+    )
+    _set_csrf_cookie(response, csrf_token, settings)
+    _refresh_session_cookie(response, settings)
+    return response
+
+
+@router.get("/web/settings", response_class=HTMLResponse)
+async def get_settings_page(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+) -> HTMLResponse:
+    """Exibe a página de configurações de storage (requer autenticação)."""
+    try:
+        await _require_auth(request, settings)
+    except HTTPException:
+        # Redireciona para login se não autenticado
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse(url="/web/login", status_code=302)
+
+    csrf_token = _generate_csrf_token()
+    response = templates.TemplateResponse(
+        "settings.html",
+        {
+            "request": request,
+            "csrf_token": csrf_token,
+            "user": {"name": "Usuário"},
         },
     )
     _set_csrf_cookie(response, csrf_token, settings)
