@@ -15,8 +15,8 @@ from typing import Any
 
 import httpx
 
-from src.app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
-from src.app.infrastructure.database.models.tasks import TaskRecord
+from app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
+from app.infrastructure.database.models.tasks import TaskRecord
 
 logger = logging.getLogger(__name__)
 

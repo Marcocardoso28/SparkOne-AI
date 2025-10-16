@@ -12,7 +12,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.app.infrastructure.database.models.tasks import TaskRecord
+from app.infrastructure.database.models.tasks import TaskRecord
 
 
 class StorageAdapter(ABC):

@@ -13,7 +13,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from src.app.domain.interfaces.storage_adapter import StorageAdapter
+    from app.domain.interfaces.storage_adapter import StorageAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class StorageAdapterRegistry:
             >>> StorageAdapterRegistry.register(NotionAdapter)
             >>> StorageAdapterRegistry.register(ClickUpAdapter)
         """
-        from src.app.domain.interfaces.storage_adapter import StorageAdapter
+        from app.domain.interfaces.storage_adapter import StorageAdapter
 
         if not issubclass(adapter_class, StorageAdapter):
             raise TypeError(
@@ -228,7 +228,7 @@ def auto_discover_adapters() -> None:
     Example:
         ```python
         # In app startup (main.py)
-        from src.app.infrastructure.storage.registry import auto_discover_adapters
+        from app.infrastructure.storage.registry import auto_discover_adapters
 
         @app.on_event("startup")
         async def startup():
@@ -267,7 +267,7 @@ def auto_discover_adapters() -> None:
                     and attr.__module__ == module_name
                 ):
                     try:
-                        from src.app.domain.interfaces.storage_adapter import (
+                        from app.domain.interfaces.storage_adapter import (
                             StorageAdapter,
                         )
 

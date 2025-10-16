@@ -13,9 +13,9 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from src.app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
-from src.app.infrastructure.database.models.tasks import TaskRecord
-from src.app.infrastructure.integrations.google_sheets import GoogleSheetsClient
+from app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
+from app.infrastructure.database.models.tasks import TaskRecord
+from app.infrastructure.integrations.google_sheets import GoogleSheetsClient
 
 logger = logging.getLogger(__name__)
 

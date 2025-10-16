@@ -16,9 +16,9 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
-from src.app.infrastructure.database.models.tasks import TaskRecord
-from src.app.infrastructure.storage.registry import StorageAdapterRegistry
+from app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
+from app.infrastructure.database.models.tasks import TaskRecord
+from app.infrastructure.storage.registry import StorageAdapterRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class StorageService:
             >>> print(f"Loaded {count} adapters")
         """
         # Import here to avoid circular dependency
-        from src.app.infrastructure.database.models.user_storage_config import (
+        from app.infrastructure.database.models.user_storage_config import (
             UserStorageConfig,
         )
 
