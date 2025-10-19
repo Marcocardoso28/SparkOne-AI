@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.database.database import get_session
+from app.infrastructure.database.database import get_db_session
 from app.infrastructure.database.models.user_storage_config import UserStorageConfig
 from app.infrastructure.storage.registry import StorageAdapterRegistry
 
@@ -111,7 +111,7 @@ class AvailableAdapter(BaseModel):
     description="Retrieve all storage configurations for the current user (single-user mode: user_id=None)",
 )
 async def list_storage_configs(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db_session),
     user_id: UUID | None = None,
 ) -> list[StorageConfigResponse]:
     """List all storage configurations for user.
@@ -156,7 +156,7 @@ async def list_storage_configs(
 )
 async def create_storage_config(
     config: StorageConfigCreate,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db_session),
     user_id: UUID | None = None,
 ) -> StorageConfigResponse:
     """Create a new storage configuration.
@@ -222,7 +222,7 @@ async def create_storage_config(
 async def update_storage_config(
     config_id: UUID,
     updates: StorageConfigUpdate,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db_session),
     user_id: UUID | None = None,
 ) -> StorageConfigResponse:
     """Update an existing storage configuration.
@@ -291,7 +291,7 @@ async def update_storage_config(
 )
 async def delete_storage_config(
     config_id: UUID,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db_session),
     user_id: UUID | None = None,
 ) -> None:
     """Delete a storage configuration.

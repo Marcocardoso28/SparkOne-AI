@@ -1,6 +1,6 @@
 from starlette.testclient import TestClient
 
-from src.app.main import app
+from app.main import app
 
 
 def test_health_endpoint_returns_ok() -> None:
