@@ -9,6 +9,13 @@ Assistente pessoal modular inspirado no "Jarvis" do Marco Cardoso. Este reposit�
 - Docker + Docker Compose (opcional)
 - Make (opcional)
 
+## Principais Recursos
+- ProactivityEngine (APScheduler): brief diário, lembretes de prazo, atrasadas e eventos
+- Multi-Storage Backend: Notion, ClickUp e Google Sheets via StorageAdapter
+- User Preferences + Web Settings: configure adapters em `/web/settings`
+- Worker dedicado (Docker) para jobs em background
+- Testes unitários e de integração com alta cobertura
+
 ## Configuração Rápida (SQLite - Desenvolvimento Local)
 1. Clone o repositório e navegue até a pasta:
    ```bash
@@ -201,6 +208,7 @@ O projeto possui documentação completa e organizada em `docs/`:
 - **[Índice Mestre](docs/INDEX.md)** - Guia centralizado de toda documentação
 - **[README Principal](docs/README.md)** - Visão geral do projeto
 - **[Status Atual](docs/reports/current-status.md)** - Status consolidado
+- **[Guia de Configuração](docs/guides/configuration.md)** - Configure Notion, ClickUp, Google Sheets e ProactivityEngine
 
 ### 🏗️ Arquitetura
 - **[Visão Geral](docs/architecture/overview.md)** - Contexto e decisões arquiteturais

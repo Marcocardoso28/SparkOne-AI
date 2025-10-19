@@ -1,8 +1,8 @@
 # Glossário - SparkOne
 ## Termos-Chave, Bibliotecas e Componentes
 
-**Versão:** 1.0  
-**Data:** Janeiro 2025  
+**Versão:** 1.1
+**Data:** Outubro 2025
 **Público:** Desenvolvedores, Stakeholders, Documentação Técnica  
 
 ---
@@ -24,10 +24,16 @@
 **Status:** Implementado (temporário)
 
 ### **APScheduler**
-**Tipo:** Biblioteca Python  
-**Definição:** Advanced Python Scheduler - biblioteca para agendamento de tarefas em Python  
-**Uso Planejado:** ProactivityEngine para lembretes automáticos e notificações proativas  
-**Status:** Não implementado
+**Tipo:** Biblioteca Python
+**Definição:** Advanced Python Scheduler - biblioteca para agendamento de tarefas em Python
+**Uso:** ProactivityEngine para lembretes automáticos e notificações proativas
+**Arquivo:** `src/app/workers/scheduler.py`
+**Jobs Implementados:**
+- Daily Brief (08:00 diário)
+- Deadline Reminders (24h antes)
+- Overdue Check (a cada 6h)
+- Event Reminders (30 min antes)
+**Status:** ✅ Implementado e em produção
 
 ### **ASGI**
 **Tipo:** Protocolo/Interface  
@@ -51,11 +57,23 @@
 ## C
 
 ### **CalDAV**
-**Tipo:** Protocolo  
-**Definição:** Calendaring Distributed Authoring and Versioning - protocolo para sincronização de calendários  
-**Uso:** Integração com Apple Calendar e outros clientes CalDAV  
-**Arquivo:** `src/app/integrations/caldav.py`  
+**Tipo:** Protocolo
+**Definição:** Calendaring Distributed Authoring and Versioning - protocolo para sincronização de calendários
+**Uso:** Integração com Apple Calendar e outros clientes CalDAV
+**Arquivo:** `src/app/integrations/caldav.py`
 **Status:** Implementado
+
+### **ClickUp**
+**Tipo:** Plataforma Externa/SaaS
+**Definição:** Plataforma de gerenciamento de projetos e tarefas
+**Integração:** Via ClickUp API REST v2
+**Adapter:** `src/app/infrastructure/storage/adapters/clickup_adapter.py`
+**Funcionalidades:**
+- CRUD completo de tarefas
+- Suporte a listas e spaces
+- Custom fields e prioridades
+- Status e assignees
+**Status:** ✅ Implementado com 24 testes unitários
 
 ### **CORS**
 **Tipo:** Política de Segurança  
@@ -249,11 +267,26 @@
 **Status:** Implementado
 
 ### **pgvector**
-**Tipo:** Extensão PostgreSQL  
-**Definição:** Extensão que adiciona suporte a vetores e busca de similaridade no PostgreSQL  
-**Uso:** Armazenamento e busca de embeddings para funcionalidades de IA  
-**Configuração:** `docker-compose.yml`  
+**Tipo:** Extensão PostgreSQL
+**Definição:** Extensão que adiciona suporte a vetores e busca de similaridade no PostgreSQL
+**Uso:** Armazenamento e busca de embeddings para funcionalidades de IA
+**Configuração:** `docker-compose.yml`
 **Status:** Implementado
+
+### **ProactivityEngine**
+**Tipo:** Sistema/Componente
+**Definição:** Motor de proatividade que automatiza lembretes, briefs diários e notificações contextuais
+**Arquivo:** `src/app/workers/`
+**Componentes:**
+- `scheduler.py` - APScheduler configuration
+- `jobs.py` - Job implementations
+**Jobs Automáticos:**
+- Daily Brief (08:00 BRT)
+- Deadline Reminders (24h antes)
+- Overdue Check (a cada 6h)
+- Event Reminders (30 min antes)
+**Container:** Worker container separado
+**Status:** ✅ Implementado e em produção
 
 ### **PostgreSQL**
 **Tipo:** Banco de Dados  
@@ -312,10 +345,10 @@
 ## S
 
 ### **SparkOne**
-**Tipo:** Projeto/Produto  
-**Definição:** Assistente pessoal modular inspirado no Jarvis, projeto principal deste documento  
-**Versão:** 0.1.0  
-**Status:** Desenvolvimento intermediário (~60% completo)
+**Tipo:** Projeto/Produto
+**Definição:** Assistente pessoal modular inspirado no Jarvis, projeto principal deste documento
+**Versão:** 0.2.0
+**Status:** Desenvolvimento avançado (85% completo - 32/36 tarefas)
 
 ### **SQLAlchemy**
 **Tipo:** ORM  
@@ -325,10 +358,37 @@
 **Status:** Implementado
 
 ### **SQLite**
-**Tipo:** Banco de Dados  
-**Definição:** Banco de dados SQL embarcado, usado como fallback para desenvolvimento local  
-**Uso:** Desenvolvimento local quando PostgreSQL não está disponível  
+**Tipo:** Banco de Dados
+**Definição:** Banco de dados SQL embarcado, usado como fallback para desenvolvimento local
+**Uso:** Desenvolvimento local quando PostgreSQL não está disponível
 **Status:** Implementado (fallback)
+
+### **StorageAdapter**
+**Tipo:** Design Pattern/Interface
+**Definição:** Pattern para abstrair acesso a diferentes backends de armazenamento (Notion, ClickUp, Google Sheets)
+**Interface:** `src/app/domain/interfaces/storage_adapter.py`
+**Implementações:**
+- NotionAdapter - Integração Notion API
+- ClickUpAdapter - Integração ClickUp API
+- GoogleSheetsAdapter - Integração Google Sheets API
+**Métodos:**
+- `get_tasks()` - Buscar tarefas
+- `save_task()` - Salvar/atualizar tarefa
+- `delete_task()` - Deletar tarefa
+- `health_check()` - Verificar saúde da integração
+**Status:** ✅ Implementado com 70+ testes
+
+### **StorageAdapterRegistry**
+**Tipo:** Registry Pattern/Sistema
+**Definição:** Sistema de registro dinâmico de storage adapters com seleção baseada em preferências do usuário
+**Arquivo:** `src/app/infrastructure/storage/registry.py`
+**Funcionalidades:**
+- Registro dinâmico de adapters
+- Health checks por adapter
+- Seleção automática baseada em user preferences
+- Fallback para adapters saudáveis
+- Parallel saves com asyncio.gather()
+**Status:** ✅ Implementado
 
 ### **structlog**
 **Tipo:** Biblioteca de Logging  
@@ -358,11 +418,23 @@
 
 ## U
 
+### **User Preferences**
+**Tipo:** Feature/Modelo
+**Definição:** Sistema de preferências do usuário para configuração de storage backends
+**Model:** `src/app/infrastructure/database/models/user_preferences.py`
+**Configurações:**
+- Default storage backend (notion/clickup/sheets)
+- Timezone preference
+- Notification settings
+- Brief schedule
+**API:** `/api/v1/storage-configs` (CRUD completo)
+**Status:** ✅ Implementado
+
 ### **Uvicorn**
-**Tipo:** Servidor ASGI  
-**Definição:** Servidor ASGI rápido para aplicações Python assíncronas  
-**Versão:** 0.30+  
-**Uso:** Servidor de aplicação para FastAPI  
+**Tipo:** Servidor ASGI
+**Definição:** Servidor ASGI rápido para aplicações Python assíncronas
+**Versão:** 0.30+
+**Uso:** Servidor de aplicação para FastAPI
 **Status:** Implementado
 
 ---

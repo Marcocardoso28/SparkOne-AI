@@ -1,9 +1,9 @@
 # System Map - SparkOne
 ## Arquitetura Atual e Fluxo de Dados
 
-**Versão:** 1.0  
-**Data:** Janeiro 2025  
-**Status:** Desenvolvimento Intermediário (~60% completo)  
+**Versão:** 1.1
+**Data:** Outubro 2025
+**Status:** Desenvolvimento Avançado (~85% completo)  
 
 ---
 
@@ -33,17 +33,36 @@ graph TB
 
     %% Serviços de Domínio
     subgraph "Serviços de Domínio"
-        TS[TaskService<br/>Notion Sync]
+        TS[TaskService<br/>Multi-Storage]
         CS[CalendarService<br/>CalDAV/Google]
         PCS[PersonalCoachService<br/>LLM Coaching]
         BS[BriefService<br/>Daily Summary]
+        PE[ProactivityEngine<br/>Auto Reminders]
         RS[RecommendationService<br/>🚧 Não Implementado]
-        PE[ProactivityEngine<br/>🚧 Não Implementado]
+    end
+
+    %% Storage Adapter Pattern
+    subgraph "Storage Adapters"
+        SAR[StorageAdapterRegistry<br/>Dynamic Registry]
+        NA[NotionAdapter]
+        CA[ClickUpAdapter]
+        SA[SheetsAdapter]
+    end
+
+    %% Worker Process
+    subgraph "Background Worker"
+        WK[APScheduler<br/>Jobs Engine]
+        JB1[Daily Brief Job]
+        JB2[Deadline Reminders]
+        JB3[Overdue Check]
+        JB4[Event Reminders]
     end
 
     %% Integrações Externas
     subgraph "Integrações Externas"
         NOTION[Notion API<br/>Task Management]
+        CLICKUP[ClickUp API<br/>Task Management]
+        GSHEETS[Google Sheets API<br/>Data Import]
         GCAL[Google Calendar<br/>Event Sync]
         CALDAV[CalDAV<br/>Apple Calendar]
         OPENAI[OpenAI API<br/>LLM Provider]
@@ -82,12 +101,30 @@ graph TB
     MT -->|COACH| PCS
     MT -->|BRIEF| BS
     MT -->|GENERAL| BS
-    
-    TS <--> NOTION
+
+    TS --> SAR
+    SAR --> NA
+    SAR --> CA
+    SAR --> SA
+
+    NA <--> NOTION
+    CA <--> CLICKUP
+    SA <--> GSHEETS
     CS <--> GCAL
     CS <--> CALDAV
     PCS --> OPENAI
     AB --> OPENAI
+
+    %% Worker connections
+    WK --> JB1
+    WK --> JB2
+    WK --> JB3
+    WK --> JB4
+    PE --> WK
+    JB1 --> EVOL
+    JB2 --> EVOL
+    JB3 --> EVOL
+    JB4 --> EVOL
     
     TS --> PG
     CS --> PG
@@ -113,9 +150,9 @@ graph TB
     classDef storage fill:#DDA0DD,stroke:#8B008B,stroke-width:2px
     classDef middleware fill:#F0E68C,stroke:#DAA520,stroke-width:2px
 
-    class WA,GS,WEB,API,IH,WH,AB,MT,TS,CS,PCS,BS implemented
-    class RS,PE notImplemented
-    class NOTION,GCAL,CALDAV,OPENAI,EVOL external
+    class WA,GS,WEB,API,IH,WH,AB,MT,TS,CS,PCS,BS,PE,SAR,NA,CA,SA,WK,JB1,JB2,JB3,JB4 implemented
+    class RS notImplemented
+    class NOTION,CLICKUP,GSHEETS,GCAL,CALDAV,OPENAI,EVOL external
     class PG,REDIS,SQLITE storage
     class CORS,SEC,RATE,PROM,CORR,LOG middleware
 ```
@@ -188,23 +225,25 @@ graph TB
 │                   SERVIÇOS DE DOMÍNIO                       │
 ├─────────────────┬─────────────────┬─────────────────────────┤
 │   TaskService   │ CalendarService │  PersonalCoachService   │
-│   ✅ Notion     │  ✅ CalDAV      │    ✅ Text Correction   │
+│   ✅ Multi-Stor │  ✅ CalDAV      │    ✅ Text Correction   │
 │   ✅ CRUD       │  ✅ Google Cal  │    ✅ Motivational      │
-│   ✅ Sync       │  ✅ Local Store │    ✅ LLM Integration   │
+│   ✅ Adapters   │  ✅ Local Store │    ✅ LLM Integration   │
 ├─────────────────┼─────────────────┼─────────────────────────┤
-│  BriefService   │ RecommendationS │   ProactivityEngine     │
-│  ✅ Daily Sum   │  🚧 Not Impl    │    🚧 Not Implemented   │
-│  ✅ Structured  │  🚧 Google Plcs │    🚧 APScheduler       │
-│  ✅ Text Format │  🚧 Eventbrite  │    🚧 Auto Reminders   │
+│  BriefService   │ ProactivityEng  │   RecommendationS       │
+│  ✅ Daily Sum   │  ✅ APScheduler │    🚧 Not Impl          │
+│  ✅ Structured  │  ✅ Auto Brief  │    🚧 Google Places     │
+│  ✅ Text Format │  ✅ Reminders   │    🚧 Eventbrite        │
 └─────────────────┴─────────────────┴─────────────────────────┘
 ```
 
 **Serviços Implementados:**
 
-#### **TaskService** (`src/app/services/tasks.py`)
+#### **TaskService** (`src/app/domain/services/tasks.py`)
 - ✅ CRUD completo de tarefas
-- ✅ Sincronização bidirecional com Notion
+- ✅ Multi-backend storage via StorageAdapterRegistry
+- ✅ Suporte a Notion, ClickUp e Google Sheets
 - ✅ Snapshot local no PostgreSQL
+- ✅ Retry automático com exponential backoff
 - ✅ Endpoints: `GET/POST/PUT/DELETE /tasks`
 
 #### **CalendarService** (`src/app/services/calendar.py`)
@@ -219,11 +258,28 @@ graph TB
 - ✅ Sugestões personalizadas
 - ✅ Prompt engineering otimizado
 
-#### **BriefService** (`src/app/routers/brief.py`)
+#### **BriefService** (`src/app/domain/services/brief.py`)
 - ✅ Resumo diário estruturado
 - ✅ Agregação de tarefas e eventos
 - ✅ Formato texto e JSON
 - ✅ Endpoints: `/brief/structured`, `/brief/text`
+
+#### **ProactivityEngine** (`src/app/workers/`)
+- ✅ APScheduler para jobs assíncronos
+- ✅ Daily brief automático (08:00 diário)
+- ✅ Deadline reminders (24h antes)
+- ✅ Overdue check (a cada 6h)
+- ✅ Event reminders (30 min antes)
+- ✅ Worker container separado
+- ✅ Timezone-aware scheduling
+
+#### **StorageAdapterRegistry** (`src/app/infrastructure/storage/`)
+- ✅ Dynamic adapter registration
+- ✅ NotionAdapter - Integração completa Notion API
+- ✅ ClickUpAdapter - CRUD completo ClickUp
+- ✅ GoogleSheetsAdapter - Import/export planilhas
+- ✅ Health checks por adapter
+- ✅ Parallel saves com asyncio.gather
 
 ### 4. **Camada de Integração (Integration Layer)**
 
@@ -231,29 +287,42 @@ graph TB
 ┌─────────────────────────────────────────────────────────────┐
 │                  INTEGRAÇÕES EXTERNAS                       │
 ├─────────────────┬─────────────────┬─────────────────────────┤
-│   Notion API    │  Google APIs    │     Evolution API       │
-│   ✅ Pages      │  ✅ Calendar    │    ✅ WhatsApp Send     │
-│   ✅ Databases  │  ✅ Sheets      │    ✅ Webhook Receive   │
-│   ✅ Auth       │  ✅ Places (🚧) │    ✅ Message Format    │
+│   Notion API    │  ClickUp API    │   Google Sheets API     │
+│   ✅ Pages      │  ✅ Tasks       │    ✅ Read/Write        │
+│   ✅ Databases  │  ✅ Lists       │    ✅ Batch Import      │
+│   ✅ Auth       │  ✅ Spaces      │    ✅ Data Export       │
 ├─────────────────┼─────────────────┼─────────────────────────┤
-│   OpenAI API    │   CalDAV        │      Eventbrite         │
-│   ✅ GPT Models │  ✅ Protocol    │     🚧 Not Impl         │
-│   ✅ Embeddings │  ✅ Apple Cal   │     🚧 Event Discovery  │
-│   ✅ Chat Comp  │  ✅ Sync        │     🚧 Recommendations  │
+│  Google Calendar│   Evolution API │      OpenAI API         │
+│  ✅ Events      │  ✅ WhatsApp    │     ✅ GPT Models       │
+│  ✅ Sync        │  ✅ Webhooks    │     ✅ Embeddings       │
+│  ✅ CalDAV      │  ✅ Send/Recv   │     ✅ Chat Completion  │
+├─────────────────┼─────────────────┼─────────────────────────┤
+│   Eventbrite    │                 │                         │
+│   🚧 Not Impl   │                 │                         │
+│   🚧 Events     │                 │                         │
 └─────────────────┴─────────────────┴─────────────────────────┘
 ```
 
 **Arquivos de Integração:**
-- `src/app/integrations/notion.py` - Cliente Notion API
-- `src/app/integrations/google_calendar.py` - Google Calendar
-- `src/app/integrations/caldav.py` - Protocolo CalDAV
-- `src/app/integrations/evolution_api.py` - WhatsApp Gateway
+- `src/app/infrastructure/integrations/notion.py` - Cliente Notion API
+- `src/app/infrastructure/integrations/google_calendar.py` - Google Calendar
+- `src/app/infrastructure/integrations/google_sheets.py` - Google Sheets
+- `src/app/infrastructure/integrations/caldav.py` - Protocolo CalDAV
+- `src/app/infrastructure/integrations/evolution_api.py` - WhatsApp Gateway
+
+**Storage Adapters:**
+- `src/app/infrastructure/storage/adapters/notion_adapter.py` - Notion integration
+- `src/app/infrastructure/storage/adapters/clickup_adapter.py` - ClickUp integration
+- `src/app/infrastructure/storage/adapters/sheets_adapter.py` - Google Sheets integration
+- `src/app/infrastructure/storage/registry.py` - Dynamic adapter registry
 
 **Arquivos de Roteadores (Routers):**
-- `src/app/routers/events.py` - `GET/POST/PUT /events`
-- `src/app/routers/brief.py` - `/brief/structured`, `/brief/text`
-- `src/app/routers/webhooks.py` - `/webhooks/whatsapp`
-- `src/app/routers/ingest.py` - `/ingest`
+- `src/app/api/v1/events.py` - `GET/POST/PUT /events`
+- `src/app/api/v1/brief.py` - `/brief/structured`, `/brief/text`
+- `src/app/api/v1/webhooks.py` - `/webhooks/whatsapp`
+- `src/app/api/v1/ingest.py` - `/ingest`
+- `src/app/api/v1/storage_configs.py` - `/api/v1/storage-configs` (CRUD)
+- `src/app/api/v1/web.py` - `/web/*` (Interface web + settings)
 
 ### 5. **Camada de Persistência (Persistence Layer)**
 
@@ -364,19 +433,24 @@ sequenceDiagram
 ### **Docker Compose Stack**
 
 ```yaml
-# Serviços Definidos em docker-compose.yml
+# Serviços Definidos em docker-compose.prod.yml
 ┌─────────────────────────────────────────────────────────────┐
 │                    CONTAINERS                               │
 ├─────────────────┬─────────────────┬─────────────────────────┤
 │      api        │     worker      │         db              │
 │   FastAPI App   │   APScheduler   │    PostgreSQL 15        │
-│   Port: 8000    │   (Planned)     │    + pgvector           │
-│   Health: /     │                 │    Port: 5432           │
+│   Port: 8000    │   ✅ Running    │    + pgvector           │
+│   Health: /     │   Jobs Engine   │    Port: 5432           │
 ├─────────────────┼─────────────────┼─────────────────────────┤
-│     cache       │     ngrok       │                         │
-│    Redis 7      │   Tunneling     │                         │
-│   Port: 6379    │   Port: 4040    │                         │
-│   Persistence   │   Dev Only      │                         │
+│     redis       │    prometheus   │      grafana            │
+│    Redis 7      │   Metrics       │    Dashboards           │
+│   Port: 6379    │   Port: 9090    │    Port: 3000           │
+│   Persistence   │   Monitoring    │    Visualization        │
+├─────────────────┼─────────────────┼─────────────────────────┤
+│     jaeger      │   alertmanager  │      traefik            │
+│   Tracing       │   Alerts        │    Reverse Proxy        │
+│   Port: 16686   │   Port: 9093    │    Port: 80/443         │
+│   OpenTelemetry │   Notifications │    Load Balancer        │
 └─────────────────┴─────────────────┴─────────────────────────┘
 ```
 
@@ -445,20 +519,35 @@ WEB_PASSWORD=<set in env>
 
 ---
 
-## Gaps e Componentes Não Implementados
+## Melhorias Futuras
 
-### **🚧 Componentes Críticos Faltando (P0)**
+### **✅ Componentes Implementados Recentemente**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                PROACTIVITY ENGINE                           │
-│                  (Não Implementado)                         │
+│                  ✅ IMPLEMENTADO                            │
 ├─────────────────────────────────────────────────────────────┤
-│  • Brief automático diário                                 │
-│  • Lembretes contextuais                                   │
-│  • Notificações proativas                                  │
-│  • Scheduler com APScheduler                               │
-│  • Worker container (definido, não implementado)           │
+│  ✅ Brief automático diário (08:00)                        │
+│  ✅ Lembretes de deadline (24h antes)                      │
+│  ✅ Notificações de eventos (30 min antes)                 │
+│  ✅ Scheduler com APScheduler                              │
+│  ✅ Worker container em produção                           │
+│  ✅ Health checks e monitoramento                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│          MULTI-STORAGE BACKEND SYSTEM                       │
+│                  ✅ IMPLEMENTADO                            │
+├─────────────────────────────────────────────────────────────┤
+│  ✅ StorageAdapterRegistry (dynamic)                       │
+│  ✅ NotionAdapter com retry logic                          │
+│  ✅ ClickUpAdapter full CRUD                               │
+│  ✅ GoogleSheetsAdapter import/export                      │
+│  ✅ User preferences per storage                           │
+│  ✅ 70+ testes unitários                                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -518,24 +607,27 @@ WEB_PASSWORD=<set in env>
 
 ## Próximos Passos Arquiteturais
 
-### **Curto Prazo (Sprint Atual)**
-1. **Implementar ProactivityEngine** - Componente crítico faltando
-2. **Migrar para Agno Library** - Substituir AgnoBridge
-3. **Implementar Worker Container** - Para tarefas assíncronas
+### **Curto Prazo (Next Sprint)**
+1. **Complete Test Coverage** - Melhorar cobertura para 70%+
+2. **Migrar para Agno Library** - Substituir AgnoBridge temporário
+3. **RecommendationService** - Integração Google Places/Eventbrite
 
 ### **Médio Prazo (Próximos 2 Sprints)**
-1. **RecommendationService** - Integração Google Places/Eventbrite
-2. **Vector Search** - Utilizar pgvector para busca semântica
-3. **WebSocket Support** - Notificações real-time
+1. **Vector Search** - Utilizar pgvector para busca semântica
+2. **WebSocket Support** - Notificações real-time
+3. **Advanced Monitoring** - Dashboards Grafana completos
+4. **Load Testing** - Testes de carga e performance
 
 ### **Longo Prazo (Roadmap)**
 1. **Multi-tenant Architecture** - Suporte a múltiplos usuários
-2. **Mobile App** - Frontend nativo
-3. **Advanced Analytics** - Dashboard de métricas
-4. **Kubernetes Deployment** - Produção escalável
+2. **Mobile App** - Frontend nativo (React Native)
+3. **Advanced Analytics** - ML para padrões de produtividade
+4. **Kubernetes Deployment** - Migração para K8s
+5. **API Rate Limiting por Usuário** - Controle granular
 
 ---
 
-**Mapa do Sistema mantido por:** Equipe de Arquitetura  
-**Última atualização:** Janeiro 2025  
-**Próxima revisão:** Após implementação do ProactivityEngine
+**Mapa do Sistema mantido por:** Equipe de Arquitetura
+**Última atualização:** Outubro 2025
+**Progresso:** 85% completo (32/36 tarefas MASTER_PLAN)
+**Próxima revisão:** Após implementação do RecommendationService
