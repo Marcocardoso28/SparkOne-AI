@@ -10,7 +10,7 @@ Related RF: RF-019 (Multi-Storage Backend System)
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
@@ -115,7 +115,7 @@ class GoogleSheetsAdapter(StorageAdapter):
         """
         try:
             # Generate unique ID for this row (timestamp-based)
-            row_id = f"row_{int(datetime.utcnow().timestamp() * 1000)}"
+            row_id = f"row_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
 
             # Build row values
             values = self._build_sheets_row(task, row_id)
@@ -253,7 +253,7 @@ class GoogleSheetsAdapter(StorageAdapter):
                 "status": status,
                 "latency_ms": round(latency_ms, 2),
                 "message": message,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             }
 
         except Exception as e:
@@ -264,7 +264,7 @@ class GoogleSheetsAdapter(StorageAdapter):
                 "status": "unhealthy",
                 "latency_ms": round(latency_ms, 2),
                 "message": f"Google Sheets API unreachable: {str(e)[:100]}",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             }
 
     def _build_sheets_row(self, task: TaskRecord, row_id: str) -> list[Any]:
@@ -284,7 +284,7 @@ class GoogleSheetsAdapter(StorageAdapter):
             task.status or "pending",  # Column D: Status
             task.priority or "medium",  # Column E: Priority
             task.due_date.isoformat() if task.due_date else "",  # Column F: Due Date
-            datetime.utcnow().isoformat() + "Z",  # Column G: Created At
+            datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),  # Column G: Created At
         ]
 
     async def batch_import_from_sheet(self) -> list[TaskRecord]:

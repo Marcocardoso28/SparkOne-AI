@@ -10,7 +10,7 @@ Related RF: RF-019 (Multi-Storage Backend System)
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from app.domain.interfaces.storage_adapter import StorageAdapter, StorageAdapterError
@@ -225,7 +225,7 @@ class NotionAdapter(StorageAdapter):
                 "status": "healthy",
                 "latency_ms": round(latency_ms, 2),
                 "message": f"Notion API accessible (database: {self._database_id[:8]}...)",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             }
 
         except Exception as e:
@@ -236,7 +236,7 @@ class NotionAdapter(StorageAdapter):
                 "status": "unhealthy",
                 "latency_ms": round(latency_ms, 2),
                 "message": f"Notion API unreachable: {str(e)[:100]}",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             }
 
     def _build_notion_payload(self, task: TaskRecord) -> dict[str, Any]:
