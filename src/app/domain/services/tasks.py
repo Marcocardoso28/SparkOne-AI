@@ -12,7 +12,7 @@ from app.core.metrics import NOTION_SYNC_COUNTER
 from app.infrastructure.database.models.repositories import create_task
 from app.infrastructure.database.models.tasks import TaskStatus
 from app.models.schemas import ChannelMessage
-from src.app.domain.services.storage import StorageService
+from app.domain.services.storage import StorageService
 
 logger = structlog.get_logger(__name__)
 
