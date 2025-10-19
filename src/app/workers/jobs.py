@@ -11,7 +11,7 @@ Related to: ADR-016 (ProactivityEngine Architecture), RF-015
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import structlog
@@ -93,7 +93,7 @@ async def send_daily_brief(user_id: str | None = None) -> None:
 
 
 async def check_deadlines(user_id: str | None = None) -> None:
-    """Check for tasks with deadlines approaching in 24 hours and send reminders.
+    """Check for tasks with deadlines approaching and send reminders.
 
     Queries tasks with due dates within the configured reminder window
     (default: 24 hours) and sends WhatsApp notifications.
@@ -120,7 +120,7 @@ async def check_deadlines(user_id: str | None = None) -> None:
                 return
 
             # Calculate reminder window
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             reminder_window = now + timedelta(hours=prefs.deadline_reminder_hours)
 
             # Query tasks with approaching deadlines
@@ -150,11 +150,11 @@ async def check_deadlines(user_id: str | None = None) -> None:
             # Build reminder message
             task_list = "\n".join(
                 [
-                    f"" {task.title} - Prazo: {task.due_at.strftime('%d/%m/%Y %H:%M')}"
+                    f"- {task.title} - Prazo: {task.due_at.strftime('%d/%m/%Y %H:%M')}"
                     for task in tasks
                 ]
             )
-            message = f"ğ Lembretes de Prazo:\n\n{task_list}\n\nNão esqueça!"
+            message = f"Lembretes de Prazo:\n\n{task_list}\n\nNao esqueca!"
 
             # Send reminder
             whatsapp_service = get_whatsapp_service()
@@ -209,7 +209,7 @@ async def check_overdue(user_id: str | None = None) -> None:
                 return
 
             # Query overdue tasks
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             stmt = (
                 select(TaskRecord)
                 .where(
@@ -234,11 +234,13 @@ async def check_overdue(user_id: str | None = None) -> None:
             # Build overdue message
             task_list = "\n".join(
                 [
-                    f"" {task.title} - Atrasada desde: {task.due_at.strftime('%d/%m/%Y')}"
+                    f"- {task.title} - Atrasada desde: {task.due_at.strftime('%d/%m/%Y')}"
                     for task in tasks
                 ]
             )
-            message = f"  Tarefas Atrasadas ({len(tasks)}):\n\n{task_list}\n\nPor favor, atualize o status!"
+            message = (
+                f"Tarefas Atrasadas ({len(tasks)}):\n\n{task_list}\n\nPor favor, atualize o status!"
+            )
 
             # Send notification
             whatsapp_service = get_whatsapp_service()
@@ -292,7 +294,7 @@ async def event_reminders(user_id: str | None = None) -> None:
                 return
 
             # Calculate event window (30 minutes ahead)
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             event_window_start = now + timedelta(minutes=25)  # 5min buffer
             event_window_end = now + timedelta(minutes=35)
 
@@ -323,11 +325,11 @@ async def event_reminders(user_id: str | None = None) -> None:
             # Build event reminder message
             event_list = "\n".join(
                 [
-                    f"" {event.title} - Às {event.due_at.strftime('%H:%M')}"
+                    f"- {event.title} - as {event.due_at.strftime('%H:%M')}"
                     for event in events
                 ]
             )
-            message = f"= Eventos em 30 minutos:\n\n{event_list}\n\nPrepare-se!"
+            message = f"Eventos em 30 minutos:\n\n{event_list}\n\nPrepare-se!"
 
             # Send reminder
             whatsapp_service = get_whatsapp_service()
