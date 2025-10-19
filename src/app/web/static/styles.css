@@ -136,15 +136,15 @@ body {
 
 .button--primary {
   align-self: flex-end;
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
   color: #0f172a;
   border: none;
   padding-inline: 28px;
-  box-shadow: 0 18px 35px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 18px 35px rgba(56, 189, 248, 0.45);
 }
 
 .button--primary:hover {
-  box-shadow: 0 22px 40px rgba(99, 102, 241, 0.55);
+  box-shadow: 0 22px 40px rgba(56, 189, 248, 0.55);
 }
 
 .button--ghost {
