@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     security_hsts_max_age: int = 63072000
     security_hsts_include_subdomains: bool = True
     security_hsts_preload: bool = False
+    # Controla o rigor da validação de configuração em startup
+    strict_config_validation: bool = False
 
     otel_enabled: bool = False
     otel_service_name: str = "sparkone-api"

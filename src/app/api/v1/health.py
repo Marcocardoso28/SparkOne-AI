@@ -27,6 +27,12 @@ async def healthcheck() -> HealthStatus:
     return HealthStatus(status="ok")
 
 
+# Handle both '/health/' and '/health' explicitly to avoid redirect issues in healthchecks
+@router.get("", response_model=HealthStatus)
+async def healthcheck_no_slash() -> HealthStatus:
+    return HealthStatus(status="ok")
+
+
 @router.get("/database", response_model=DatabaseHealthStatus)
 async def database_health(session: AsyncSession = Depends(get_db_session)) -> DatabaseHealthStatus:
     try:

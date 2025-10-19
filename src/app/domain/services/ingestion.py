@@ -92,7 +92,7 @@ class DocumentIngestionService:
 
 class IngestionService:
     """High-level ingestion service for channel messages."""
-    
+
     def __init__(
         self,
         session: AsyncSession,
@@ -106,13 +106,47 @@ class IngestionService:
         self._embedding_service = embedding_service
         self._memory_service = memory_service
         self._dispatcher = dispatcher
-    
-    async def ingest(self, message) -> None:
+
+    async def ingest(self, message) -> dict:
         """Ingest a channel message."""
-        # Simple implementation for testing
-        # In a real implementation, this would process the message
-        # through the orchestrator and other services
-        pass
+        from app.infrastructure.database.models.repositories import (
+            create_channel_message,
+            create_conversation_message,
+        )
+
+        logger.info("message_ingested",
+                   channel=message.channel,
+                   sender=message.sender,
+                   content_length=len(message.content))
+
+        # Save channel message
+        channel_msg = await create_channel_message(
+            self._session,
+            channel=message.channel,
+            sender=message.sender,
+            content=message.content,
+            extra_data=message.extra_data or {},
+        )
+
+        # Create user message in conversation
+        user_msg = await create_conversation_message(
+            self._session,
+            conversation_id=1,  # Default conversation
+            role="user",
+            content=message.content,
+        )
+
+        await self._session.commit()
+
+        logger.info("message_saved",
+                   channel_message_id=channel_msg.id,
+                   conversation_message_id=user_msg.id)
+
+        return {
+            "channel_message_id": channel_msg.id,
+            "conversation_message_id": user_msg.id,
+            "status": "saved",
+        }
 
 # Alias for backward compatibility
 __all__ = ["DocumentIngestionService", "IngestionService", "IngestionResult"]

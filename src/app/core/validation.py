@@ -25,7 +25,12 @@ def validate_critical_config(settings: Settings) -> None:
 
     # Validate LLM providers
     if not settings.openai_api_key and not settings.local_llm_url:
-        errors.append("No LLM provider configured. Set either OPENAI_API_KEY or LOCAL_LLM_URL.")
+        if getattr(settings, "require_agno", False):
+            errors.append(
+                "No LLM provider configured. Set either OPENAI_API_KEY or LOCAL_LLM_URL.")
+        else:
+            warnings.append(
+                "No LLM provider configured. Some features will be limited.")
 
     # Validate OpenAI configuration if enabled
     if settings.openai_api_key:
@@ -40,27 +45,30 @@ def validate_critical_config(settings: Settings) -> None:
         if settings.evolution_api_key.strip() in ("", "changeme", "your-key-here"):
             errors.append("Invalid EVOLUTION_API_KEY. Please set a valid Evolution API key.")
 
-    # Validate database configuration
+    # Validate database configuration (allow startup without DB if not strict)
     if not settings.database_url or settings.database_url.strip() == "":
-        errors.append("DATABASE_URL is required and cannot be empty.")
+        strict = getattr(settings, "strict_config_validation", False)
+        (errors if strict else warnings).append(
+            "DATABASE_URL is empty. Features requiring DB will be limited.")
 
     # Validate production-specific settings
     if settings.environment == "production":
+        strict = getattr(settings, "strict_config_validation", False)
         if settings.debug:
-            errors.append("DEBUG should be false in production environment.")
+            (errors if strict else warnings).append(
+                "DEBUG should be false in production environment.")
 
         if settings.allowed_hosts == "*":
-            errors.append(
-                "ALLOWED_HOSTS should not be '*' in production. " "Specify allowed hostnames."
-            )
+            (errors if strict else warnings).append(
+                "ALLOWED_HOSTS is '*' in production. Specify allowed hostnames.")
 
         if settings.cors_origins == "*":
-            errors.append(
-                "CORS_ORIGINS should not be '*' in production. " "Specify allowed origins."
-            )
+            (errors if strict else warnings).append(
+                "CORS_ORIGINS is '*' in production. Specify allowed origins.")
 
         if not settings.security_hsts_enabled:
-            errors.append("SECURITY_HSTS_ENABLED should be true in production.")
+            (errors if strict else warnings).append(
+                "SECURITY_HSTS_ENABLED should be true in production.")
 
     # Log warnings for optional but recommended settings
     warnings: list[str] = []
