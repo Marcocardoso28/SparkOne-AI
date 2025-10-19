@@ -26,6 +26,7 @@ from app.domain.services.embeddings import EmbeddingService
 from app.domain.services.ingestion import IngestionService
 from app.domain.services.memory import MemoryService
 from app.domain.services.personal_coach import PersonalCoachService
+from app.domain.services.storage import StorageService
 from app.domain.services.tasks import TaskService
 from app.domain.services.whatsapp import WhatsAppService
 
@@ -147,10 +148,13 @@ def build_ingestion_service(session: AsyncSession) -> IngestionService:
         default_timezone = ZoneInfo(settings.timezone)
     except Exception:  # pragma: no cover - fallback for invalid timezones
         default_timezone = ZoneInfo("UTC")
+    # Create StorageService for multi-backend support
+    storage_service = StorageService(session=session)
+
     task_service = TaskService(
         session=session,
-        notion_client=notion_client,
-        notion_database_id=settings.notion_database_id,
+        storage_service=storage_service,
+        user_id=None,  # Single-user mode for now
     )
     calendar_service = CalendarService(
         session=session,
