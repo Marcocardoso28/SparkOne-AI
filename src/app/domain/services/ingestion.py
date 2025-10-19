@@ -110,9 +110,10 @@ class IngestionService:
     async def ingest(self, message) -> dict:
         """Ingest a channel message."""
         from app.infrastructure.database.models.repositories import (
-            create_channel_message,
-            create_conversation_message,
+            save_channel_message,
+            append_conversation_message,
         )
+        from app.infrastructure.database.models.memory import ConversationRole
 
         logger.info("message_ingested",
                    channel=message.channel,
@@ -120,19 +121,18 @@ class IngestionService:
                    content_length=len(message.content))
 
         # Save channel message
-        channel_msg = await create_channel_message(
+        channel_msg = await save_channel_message(
             self._session,
-            channel=message.channel,
-            sender=message.sender,
-            content=message.content,
-            extra_data=message.extra_data or {},
+            payload=message,
         )
 
         # Create user message in conversation
-        user_msg = await create_conversation_message(
+        user_msg = await append_conversation_message(
             self._session,
-            conversation_id=1,  # Default conversation
-            role="user",
+            conversation_id="default",  # Default conversation
+            channel=message.channel,
+            sender=message.sender,
+            role=ConversationRole.USER,
             content=message.content,
         )
 
