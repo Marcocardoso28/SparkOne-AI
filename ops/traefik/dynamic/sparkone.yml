@@ -19,9 +19,10 @@ http:
 
   routers:
     sparkone-api:
-      rule: "Host(`yourdomain.com`) || Host(`www.yourdomain.com`)"
+      rule: "Host(`sparkone-ai.macspark.dev`) || Host(`www.sparkone-ai.macspark.dev`)"
       entryPoints:
         - websecure
+        - web
       service: sparkone-api
       middlewares:
         - sparkone-security-headers

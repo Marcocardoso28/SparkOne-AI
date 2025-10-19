@@ -54,21 +54,16 @@ services:
       - redis
     networks:
       - sparkone-network
+      - proxy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.api.rule=Host(`yourdomain.com`) || Host(`www.yourdomain.com`)
-      - traefik.http.routers.api.entrypoints=websecure
-      - traefik.http.routers.api.tls.certresolver=letsencrypt
-      - traefik.http.routers.api.service=api
-      - traefik.http.services.api.loadbalancer.server.port=8000
-      - traefik.http.routers.api.middlewares=security-headers,rate-limit
-      - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-Proto=https
-      - traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-For=
-      - traefik.http.middlewares.rate-limit.ratelimit.burst=100
-      - traefik.http.middlewares.rate-limit.ratelimit.average=50
+      - traefik.http.routers.sparkone-api.rule=Host(`sparkone-ai.macspark.dev`) || Host(`www.sparkone-ai.macspark.dev`)
+      - traefik.http.routers.sparkone-api.entrypoints=web,websecure
+      - traefik.http.routers.sparkone-api.service=sparkone-api
+      - traefik.http.services.sparkone-api.loadbalancer.server.port=8000
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -80,6 +75,13 @@ services:
     env_file: .env
     environment:
       - TZ=${TZ:-America/Sao_Paulo}
+      # ProactivityEngine configuration
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EVOLUTION_API_BASE_URL=${EVOLUTION_API_BASE_URL}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      # Database for user_preferences and tasks
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./uploads:/app/uploads
       - ./secrets:/secrets:ro
@@ -88,6 +90,12 @@ services:
     networks:
       - sparkone-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ps", "aux", "|", "grep", "scheduler"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -114,8 +122,8 @@ services:
       - --web.enable-lifecycle
       - --web.enable-admin-api
     volumes:
-      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./ops/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./ops/monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     networks:
       - sparkone-network
@@ -138,7 +146,7 @@ services:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./ops/grafana/dashboard-overview.json:/etc/grafana/provisioning/dashboards/dashboard-overview.json:ro
+      - ./ops/monitoring/grafana/dashboard-overview.json:/etc/grafana/provisioning/dashboards/dashboard-overview.json:ro
     networks:
       - sparkone-network
     labels:
@@ -157,7 +165,7 @@ services:
       - --storage.path=/alertmanager
       - --web.external-url=https://alertmanager.yourdomain.com
     volumes:
-      - ./ops/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./ops/monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     networks:
       - sparkone-network
@@ -197,3 +205,5 @@ volumes:
 networks:
   sparkone-network:
     driver: bridge
+  proxy:
+    external: true

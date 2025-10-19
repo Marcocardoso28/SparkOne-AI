@@ -27,6 +27,12 @@ services:
       - DEBUG=false
     ports:
       - "8080:8000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sparkone-api.rule=Host(`sparkone-ai.macspark.dev`) || Host(`www.sparkone-ai.macspark.dev`)
+      - traefik.http.routers.sparkone-api.entrypoints=web,websecure
+      - traefik.http.routers.sparkone-api.service=sparkone-api
+      - traefik.http.services.sparkone-api.loadbalancer.server.port=8000
     depends_on:
       - db
       - cache
