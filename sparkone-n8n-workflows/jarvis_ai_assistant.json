@@ -1,0 +1,316 @@
+{
+  "name": "SparkOne - Assistente IA WhatsApp Avançado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sparkone-whatsapp",
+        "options": {}
+      },
+      "id": "chat-webhook",
+      "name": "Chat WhatsApp SparkOne",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "sparkone-whatsapp-chat"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4o"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\": \"system\", \"content\": \"Você é SparkOne, o assistente pessoal inteligente. Você é extremamente inteligente, eficiente e tem personalidade marcante. Você pode ajudar com qualquer tarefa, desde análises complexas até automações. Sempre seja direto, útil e um pouco sarcástico quando apropriado. Use emojis ocasionalmente para tornar a conversa mais dinâmica.\"}, {\"role\": \"user\", \"content\": \"{{ $json.body.message }}\"}]"
+            },
+            {
+              "name": "max_tokens",
+              "value": 1000
+            },
+            {
+              "name": "temperature",
+              "value": 0.8
+            },
+            {
+              "name": "tools",
+              "value": "=[{\"type\": \"function\", \"function\": {\"name\": \"search_web\", \"description\": \"Buscar informações atualizadas na web\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"Termo de busca\"}}, \"required\": [\"query\"]}}}, {\"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"description\": \"Obter informações do clima\", \"parameters\": {\"type\": \"object\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"Localização para verificar o clima\"}}, \"required\": [\"location\"]}}}, {\"type\": \"function\", \"function\": {\"name\": \"schedule_reminder\", \"description\": \"Agendar um lembrete\", \"parameters\": {\"type\": \"object\", \"properties\": {\"task\": {\"type\": \"string\", \"description\": \"Tarefa para lembrar\"}, \"time\": {\"type\": \"string\", \"description\": \"Quando lembrar\"}}, \"required\": [\"task\", \"time\"]}}}]"
+            }
+          ]
+        }
+      },
+      "id": "ai-chat",
+      "name": "Processar com IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.choices[0].message.tool_calls }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-tool-calls",
+      "name": "Verificar Chamadas de Função",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "options": {
+          "qs": {
+            "q": "={{ $json.choices[0].message.tool_calls[0].function.arguments.location }}",
+            "appid": "{{ $vars.OPENWEATHER_API_KEY }}",
+            "units": "metric",
+            "lang": "pt_br"
+          }
+        }
+      },
+      "id": "get-weather",
+      "name": "Buscar Clima",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://api.duckduckgo.com/",
+        "options": {
+          "qs": {
+            "q": "={{ $json.choices[0].message.tool_calls[0].function.arguments.query }}",
+            "format": "json",
+            "no_html": "1",
+            "skip_disambig": "1"
+          }
+        }
+      },
+      "id": "search-web",
+      "name": "Buscar na Web",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+              "value": "{{ $vars.SPARKONE_REMINDERS_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Lembretes",
+          "mode": "list"
+        },
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "A",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "column": "B",
+              "value": "={{ $json.choices[0].message.tool_calls[0].function.arguments.task }}"
+            },
+            {
+              "column": "C",
+              "value": "={{ $json.choices[0].message.tool_calls[0].function.arguments.time }}"
+            },
+            {
+              "column": "D",
+              "value": "Pendente"
+            }
+          ]
+        }
+      },
+      "id": "schedule-reminder",
+      "name": "Agendar Lembrete",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4o"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\": \"system\", \"content\": \"Você é SparkOne. Use as informações fornecidas para responder de forma útil e inteligente.\"}, {\"role\": \"user\", \"content\": \"{{ $('Chat WhatsApp SparkOne').item.json.body.message }}\"}, {\"role\": \"assistant\", \"content\": \"{{ $('Processar com IA').item.json.choices[0].message.content }}\"}, {\"role\": \"function\", \"name\": \"{{ $('Processar com IA').item.json.choices[0].message.tool_calls[0].function.name }}\", \"content\": \"{{ $json }}\"}]"
+            },
+            {
+              "name": "max_tokens",
+              "value": 1000
+            },
+            {
+              "name": "temperature",
+              "value": 0.8
+            }
+          ]
+        }
+      },
+      "id": "final-response",
+      "name": "Resposta Final",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"response\": $json.choices[0].message.content, \"timestamp\": new Date().toISOString(), \"sparkone_version\": \"1.0\" } }}"
+      },
+      "id": "webhook-response",
+      "name": "Resposta Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Chat WhatsApp SparkOne": {
+      "main": [
+        [
+          {
+            "node": "Processar com IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar com IA": {
+      "main": [
+        [
+          {
+            "node": "Verificar Chamadas de Função",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Chamadas de Função": {
+      "main": [
+        [
+          {
+            "node": "Buscar Clima",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Buscar na Web",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Agendar Lembrete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Clima": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar na Web": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar Lembrete": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta Final": {
+      "main": [
+        [
+          {
+            "node": "Resposta Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1"
+}

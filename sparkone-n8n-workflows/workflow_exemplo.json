@@ -1,0 +1,43 @@
+{
+  "name": "Automação Básica - Webhook para Slack",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "exemplo-webhook"
+    },
+    {
+      "parameters": {
+        "message": "Nova mensagem recebida: {{ $json.body.message }}",
+        "channel": "#geral"
+      },
+      "id": "slack-message",
+      "name": "Enviar para Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Enviar para Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}
+
+

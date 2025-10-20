@@ -1,0 +1,87 @@
+{
+  "name": "Processamento de Dados - API para Banco",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "options": {}
+      },
+      "id": "http-request",
+      "name": "Buscar Dados da API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.userId }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-data",
+      "name": "Filtrar Dados",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "posts",
+        "columns": "id,title,body,userId",
+        "values": "={{ $json.id }},={{ $json.title }},={{ $json.body }},={{ $json.userId }}"
+      },
+      "id": "mysql-insert",
+      "name": "Inserir no MySQL",
+      "type": "n8n-nodes-base.mysql",
+      "typeVersion": 2.4,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Buscar Dados da API": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Dados": {
+      "main": [
+        [
+          {
+            "node": "Inserir no MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}
+
+

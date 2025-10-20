@@ -1,0 +1,324 @@
+{
+  "name": "SparkOne - WhatsApp Evolution Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-webhook",
+        "options": {}
+      },
+      "id": "evolution-webhook",
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "evolution-whatsapp-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "messages.upsert",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-2",
+              "leftValue": "={{ $json.data.key.remoteJid }}",
+              "rightValue": "status@broadcast",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-messages",
+      "name": "Filtrar Mensagens",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4o"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\": \"system\", \"content\": \"Você é SparkOne ⚡, o assistente pessoal inteligente via WhatsApp. Você é extremamente inteligente, eficiente e tem personalidade marcante. Sempre seja útil, direto e use emojis para tornar a conversa mais dinâmica. Mantenha as respostas concisas para WhatsApp.\"}, {\"role\": \"user\", \"content\": \"{{ $json.data.message.conversation || $json.data.message.extendedTextMessage?.text || 'Mensagem não reconhecida' }}\"}]"
+            },
+            {
+              "name": "max_tokens",
+              "value": 500
+            },
+            {
+              "name": "temperature",
+              "value": 0.8
+            }
+          ]
+        }
+      },
+      "id": "ai-processing",
+      "name": "Processar com IA SparkOne",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.EVOLUTION_API_URL || 'http://localhost:8080' }}/message/sendText/{{ $vars.EVOLUTION_INSTANCE_NAME || 'sparkone-instance' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "{{ $vars.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.data.key.remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Processar com IA SparkOne').item.json.choices[0].message.content }}"
+            }
+          ]
+        }
+      },
+      "id": "send-whatsapp",
+      "name": "Enviar Resposta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $('Webhook Evolution').item.json.data.message.conversation }}",
+              "rightValue": "comandos",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-commands",
+      "name": "Filtrar Comandos",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "options": {
+          "qs": {
+            "q": "São Paulo",
+            "appid": "{{ $vars.OPENWEATHER_API_KEY }}",
+            "units": "metric",
+            "lang": "pt_br"
+          }
+        }
+      },
+      "id": "get-weather",
+      "name": "Buscar Clima",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.newsapi.org/v2/top-headlines",
+        "options": {
+          "qs": {
+            "country": "br",
+            "apiKey": "{{ $vars.NEWS_API_KEY }}",
+            "pageSize": 3
+          }
+        }
+      },
+      "id": "get-news",
+      "name": "Buscar Notícias",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.EVOLUTION_API_URL || 'http://localhost:8080' }}/message/sendText/{{ $vars.EVOLUTION_INSTANCE_NAME || 'sparkone-instance' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "{{ $vars.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Webhook Evolution').item.json.data.key.remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '') }}"
+            },
+            {
+              "name": "text",
+              "value": "🌤️ *Clima Atual*\\n{{ $json.main.temp }}°C - {{ $json.weather[0].description }}\\n\\n📰 *Principais Notícias*\\n{{ $('Buscar Notícias').item.json.articles[0].title }}\\n\\n⚡ *SparkOne* - Seu assistente inteligente"
+            }
+          ]
+        }
+      },
+      "id": "send-weather-news",
+      "name": "Enviar Clima e Notícias",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Evolution": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Processar com IA SparkOne",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filtrar Comandos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar com IA SparkOne": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Comandos": {
+      "main": [
+        [
+          {
+            "node": "Buscar Clima",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Buscar Notícias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Clima": {
+      "main": [
+        [
+          {
+            "node": "Enviar Clima e Notícias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Notícias": {
+      "main": [
+        [
+          {
+            "node": "Enviar Clima e Notícias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1"
+}
+
+
+
