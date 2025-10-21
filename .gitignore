@@ -117,3 +117,9 @@ prd_audit_*.json
 # Project specific
 uploads/temp/
 out/
+ 
+# Local agent/tooling configs
+.claude/
+
+# Env backup snapshots
+.env.backup-*
