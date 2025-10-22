@@ -40,8 +40,10 @@ class TaskResponse(BaseModel):
             due_date=record.due_date.isoformat() if record.due_date else None,
             channel=record.channel,
             sender=record.sender,
-            created_at=record.created_at.isoformat() if record.created_at else "1970-01-01T00:00:00Z",
-            updated_at=record.updated_at.isoformat() if record.updated_at else "1970-01-01T00:00:00Z",
+            created_at=record.created_at.isoformat(
+            ) if record.created_at else "1970-01-01T00:00:00Z",
+            updated_at=record.updated_at.isoformat(
+            ) if record.updated_at else "1970-01-01T00:00:00Z",
         )
 
 
@@ -150,7 +152,7 @@ async def update_task(
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+
     # Preparar resposta antes do commit
     response_data = TaskResponse.from_orm(record)
     await session.commit()
@@ -169,24 +171,28 @@ async def update_task_status_endpoint(
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+
     # Atualizar o status
     record.status = payload.status
-    await session.commit()
-    
-    # Retornar resposta manualmente com valores seguros
-    return TaskResponse(
+
+    # Preparar resposta ANTES do commit para evitar problemas com greenlet
+    response_data = TaskResponse(
         id=record.id,
         title=record.title,
         description=record.description,
         status=record.status,
         priority=record.priority,
-        due_date=None,  # Valor fixo para evitar problemas async
+        due_date=record.due_date.isoformat() if record.due_date else None,
         channel=record.channel,
         sender=record.sender,
-        created_at="2024-01-01T00:00:00Z",  # Valor fixo para evitar problemas async
-        updated_at="2024-01-01T00:00:00Z",  # Valor fixo para evitar problemas async
+        created_at=record.created_at.isoformat(
+        ) if record.created_at else "1970-01-01T00:00:00Z",
+        updated_at=record.updated_at.isoformat(
+        ) if record.updated_at else "1970-01-01T00:00:00Z",
     )
+
+    await session.commit()
+    return response_data
 
 
 __all__ = ["router"]

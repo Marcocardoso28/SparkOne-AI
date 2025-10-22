@@ -10,7 +10,7 @@ name = "sparkone"
 version = "0.1.0"
 description = "SparkOne assistant platform"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 authors = [{ name = "Marco Cardoso" }]
 dependencies = [
     "fastapi>=0.115,<0.118",
